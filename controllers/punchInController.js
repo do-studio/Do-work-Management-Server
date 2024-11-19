@@ -297,7 +297,7 @@ const punchInControllers = () => {
                     distance: punchInObj.distance,
                     punchOutTime: punchOut?.punchOutTime || null,
                     punchOutLocation: punchOut?.punchOutLocation || null,
-                    status: punchOut ? 'completed' : 'active',
+                    status: punchOut ? 'completed' : 'present',
                     workingHours: punchOut ?
                         ((new Date(punchOut.punchOutTime) - new Date(punchInObj.punchInTime)) / (1000 * 60 * 60)).toFixed(2)
                         : null
@@ -307,7 +307,7 @@ const punchInControllers = () => {
             // Calculate summary statistics
             const summary = {
                 totalRecords: combinedRecords.length,
-                activeEmployees: combinedRecords.filter(record => record.status === 'active').length,
+                activeEmployees: combinedRecords.filter(record => record.status === 'present').length,
                 completedShifts: combinedRecords.filter(record => record.status === 'completed').length,
                 averageWorkingHours: combinedRecords
                     .filter(record => record.workingHours)
