@@ -9,11 +9,11 @@ const taskHelpers = {
 
 
     const today = new Date();  // Get today's date in local timezone
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());  // Start of the day (00:00:00)
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());  // End of the day at 18:30 (6:30 PM)
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()-1);  // Start of the day (00:00:00)
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()-1);  // End of the day at 18:30 (6:30 PM)
     // Convert to UTC if you want to compare in UTC
-    const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 18, 30, 0, 0));
-    const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 18, 30, 0, 0));
+    const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 18, 30, 0, 0)-1);
+    const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate(), 18, 30, 0, 0)-1);
 
     console.log("startOfDay (local):", startOfDay.toISOString());
     console.log("endOfDay (local):", endOfDay.toISOString());

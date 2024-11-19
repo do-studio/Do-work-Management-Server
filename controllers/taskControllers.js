@@ -221,6 +221,7 @@ const taskControllers = () => {
 
             // Pass projectId, userId, and today as the due date to the helper function
             const projectResponse = await taskHelpers.getProjectByPeople();
+            // return res.status(200).json({data:projectResponse})
 
             // return res.status(200).json({ status: true, data: projectResponse });
             const people = await UserModel.find({ role: configKeys.JWT_USER_ROLE }, { _id: 1 }).sort({ isActive: 1 });
@@ -231,7 +232,6 @@ const taskControllers = () => {
             // Convert to an array of _id values
             const peopleIds = people.map(person => person._id);
 
-            console.log("People id", peopleIds);
 
 
 
