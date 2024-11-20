@@ -62,12 +62,22 @@ const punchInControllers = () => {
                 const punchInRecord = await PunchInRecord.create({
                     userId,
                     punchInTime: new Date(),
-                    punchInLocation: `${latitude}, ${longitude}`,
+                    punchInLocation: "Office",
+                    workingMode: "Onsite",
+                    status: 'true',
                     distance,
                 });
-                res.status(201).json(punchInRecord);
+                res.status(201).json({ message: "Punch in success", punchInRecord });
             } else {
-                res.status(400).json({ error: 'You are not in the company.', distance: distance });
+                const punchInRecord = await PunchInRecord.create({
+                    userId,
+                    punchInTime: new Date(),
+                    punchInLocation: `${latitude}, ${longitude}`,
+                    workingMode: "WFH",
+                    distance,
+                    status: 'pending'
+                });
+                res.status(201).json({ message: "You are not in the office, your request sent to the admin", punchInRecord });
             }
         } catch (error) {
             console.log(error);
@@ -90,6 +100,8 @@ const punchInControllers = () => {
                     $lte: new Date(today + 'T23:59:59.999Z')
                 }
             });
+            console.log(todayPunchRecord);
+
 
             if (!todayPunchRecord) {
                 return res.status(200).json({
@@ -99,16 +111,21 @@ const punchInControllers = () => {
                 });
             }
 
+
+
             // If record exists, format and return the data
             return res.status(200).json({
                 status: true,
-                isPunchedIn: true,
+                isPunchedIn: todayPunchRecord.status,
+
                 message: "User has punched in today",
+
                 punchInDetails: {
                     punchInTime: todayPunchRecord.punchInTime,
                     punchInLocation: todayPunchRecord.punchInLocation,
                     distance: todayPunchRecord.distance,
-                    timeElapsed: Math.round((new Date() - new Date(todayPunchRecord.punchInTime)) / (1000 * 60)) // minutes elapsed since punch-in
+                    workingMode: todayPunchRecord.workingMode,
+                    status: todayPunchRecord.status
                 }
             });
 
@@ -189,11 +206,21 @@ const punchInControllers = () => {
                     userId,
                     punchOutTime: new Date(),
                     punchOutLocation: `${latitude}, ${longitude}`,
+                    workingMode: 'Office',
+                    status: "true",
                     distance,
                 });
-                res.status(201).json(punchOutRecord);
+                res.status(201).json({ message: "Punch out success", punchOutRecord });
             } else {
-                res.status(400).json({ error: 'You are not in the company.', distance: distance });
+                const punchOutRecord = await PunchOutRecord.create({
+                    userId,
+                    punchOutTime: new Date(),
+                    punchOutLocation: `${latitude}, ${longitude}`,
+                    workingMode: 'Office',
+                    status: "pending",
+                    distance,
+                });
+                res.status(201).json({ message: "You are not in the office, your request sent to the admin", punchOutRecord });
             }
         } catch (error) {
             console.log(error);
@@ -221,7 +248,7 @@ const punchInControllers = () => {
             if (!todayPunchRecord) {
                 return res.status(200).json({
                     status: true,
-                    isPunchedIn: false,
+                    isPunchedOut: false,
                     message: "No punch-out record found for today"
                 });
             }
@@ -229,7 +256,7 @@ const punchInControllers = () => {
             // If record exists, format and return the data
             return res.status(200).json({
                 status: true,
-                isPunchedOut: true,
+                isPunchedOut: todayPunchRecord.status,
                 message: "User has punched out today",
                 punchOutDetails: {
                     punchOutTime: todayPunchRecord.punchOutTime,
@@ -251,8 +278,6 @@ const punchInControllers = () => {
 
 
     const getTodayAttendance = async (req, res) => {
-
-
         try {
             // Get today's date range
             const today = new Date().toISOString().slice(0, 10);
@@ -265,6 +290,7 @@ const punchInControllers = () => {
                     $gte: startOfDay,
                     $lte: endOfDay
                 }
+                , status: "true"
             })
                 .populate('userId', 'userName email profilePhotoURL') // Populate user details - adjust fields as needed
                 .sort({ punchInTime: -1 });
@@ -274,7 +300,8 @@ const punchInControllers = () => {
                 punchOutTime: {
                     $gte: startOfDay,
                     $lte: endOfDay
-                }
+                },
+                status: "true"
             }).lean();
 
             // Create a map of punch-out records by userId for easier lookup
@@ -297,6 +324,7 @@ const punchInControllers = () => {
                     distance: punchInObj.distance,
                     punchOutTime: punchOut?.punchOutTime || null,
                     punchOutLocation: punchOut?.punchOutLocation || null,
+                    workingMode: punchInObj?.workingMode,
                     status: punchOut ? 'completed' : 'present',
                     workingHours: punchOut ?
                         ((new Date(punchOut.punchOutTime) - new Date(punchInObj.punchInTime)) / (1000 * 60 * 60)).toFixed(2)
@@ -443,6 +471,146 @@ const punchInControllers = () => {
         }
     };
 
+    const getAllRequests = async (req, res) => {
+        try {
+            // Get today's date range
+            const today = new Date().toISOString().slice(0, 10);
+
+
+            // Get all punch-in records for today
+            const punchInRecords = await PunchInRecord.find({
+                status: 'pending'
+            }).populate('userId', 'userName email profilePhotoURL') // Populate user details - adjust fields as needed
+                .sort({ punchInTime: -1 });
+
+
+            // Get all punch-out records for today
+            const punchOutRecords = await PunchOutRecord.find({
+                status: 'pending'
+            }).populate('userId', 'userName email profilePhotoURL') // Populate user details - adjust fields as needed
+                .sort({ punchInTime: -1 });
+
+
+
+
+
+            res.status(200).json({
+                status: true,
+
+                data: { punchInRecords, punchOutRecords },
+
+            });
+
+        } catch (error) {
+            console.error('Error in getAllRequests:', error);
+            res.status(500).json({
+                status: false,
+                message: "Internal server error",
+                error: error.message
+            });
+        }
+    };
+
+    const acceptRequest = async (req, res) => {
+        try {
+            const { requestId } = req.body;
+            if (!requestId) {
+                return res.status(400).json({
+                    status: false,
+                    message: "Request ID is required"
+                });
+            }
+
+            // Try to find and update in PunchInRecord
+            let updatedRecord = await PunchInRecord.findOneAndUpdate(
+                { _id: requestId, status: 'pending' },
+                { status: 'true' },
+                { new: true }
+            ).populate('userId', 'userName email profilePhotoURL');
+
+            // If not found in PunchInRecord, try PunchOutRecord
+            if (!updatedRecord) {
+                updatedRecord = await PunchOutRecord.findOneAndUpdate(
+                    { _id: requestId, status: 'pending' },
+                    { status: 'true' },
+                    { new: true }
+                ).populate('userId', 'userName email profilePhotoURL');
+            }
+
+            // If not found in either model
+            if (!updatedRecord) {
+                return res.status(404).json({
+                    status: false,
+                    message: "Request not found or already approved"
+                });
+            }
+
+            res.status(200).json({
+                status: true,
+                message: "Request approved successfully",
+                data: updatedRecord
+            });
+
+        } catch (error) {
+            console.error('Error in acceptRequest:', error);
+            res.status(500).json({
+                status: false,
+                message: "Internal server error",
+                error: error.message
+            });
+        }
+    };
+
+    const rejectRequest = async (req, res) => {
+        try {
+            const { requestId } = req.body;
+            if (!requestId) {
+                return res.status(400).json({
+                    status: false,
+                    message: "Request ID is required"
+                });
+            }
+
+            // Try to find and update in PunchInRecord
+            let updatedRecord = await PunchInRecord.findOneAndUpdate(
+                { _id: requestId, status: 'pending' },
+                { status: 'rejected' },
+                { new: true }
+            ).populate('userId', 'userName email profilePhotoURL');
+
+            // If not found in PunchInRecord, try PunchOutRecord
+            if (!updatedRecord) {
+                updatedRecord = await PunchOutRecord.findOneAndUpdate(
+                    { _id: requestId, status: 'pending' },
+                    { status: 'rejected' },
+                    { new: true }
+                ).populate('userId', 'userName email profilePhotoURL');
+            }
+
+            // If not found in either model
+            if (!updatedRecord) {
+                return res.status(404).json({
+                    status: false,
+                    message: "Request not found or already approved"
+                });
+            }
+
+            res.status(200).json({
+                status: true,
+                message: "Request rejected",
+                data: updatedRecord
+            });
+
+        } catch (error) {
+            console.error('Error in rejectRequest:', error);
+            res.status(500).json({
+                status: false,
+                message: "Internal server error",
+                error: error.message
+            });
+        }
+    };
+
 
 
 
@@ -452,8 +620,10 @@ const punchInControllers = () => {
         checkTodayPunchInStatus,
         checkTodayPunchOutStatus,
         getTodayAttendance,
-        getUserAttendanceReport
-
+        getUserAttendanceReport,
+        getAllRequests,
+        acceptRequest,
+        rejectRequest
 
     }
 }
