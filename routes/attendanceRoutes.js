@@ -14,9 +14,12 @@ const attendanceRoute = () => {
     router.post('/checkTodayPunchOutStatus', punchInController.checkTodayPunchOutStatus)
 
     router.get('/getTodayAttendance', punchInController.getTodayAttendance)
+    router.get('/getAllRequests', punchInController.getAllRequests)
 
     router.post('/getUserAttendanceReport/:id', punchInController.getUserAttendanceReport)
 
+    router.post('/acceptRequest', punchInController.acceptRequest)
+    router.post('/rejectRequest', punchInController.rejectRequest)
 
 
 

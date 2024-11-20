@@ -19,6 +19,15 @@ const PunchOutRecordSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  workingMode: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    default: "true",
+    required: true
+  }
 });
 const PunchOuRecord = mongoose.model('PunchOutRecord', PunchOutRecordSchema);
 export default PunchOuRecord
