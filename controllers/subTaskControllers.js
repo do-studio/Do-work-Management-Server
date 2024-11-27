@@ -185,7 +185,7 @@ const subTaskControllers = () => {
         try {
             const subTaskPrioritySchema = Joi.object({
                 subTaskId: Joi.string().required(),
-                priority: Joi.string().max(25).required()
+                priority: Joi.required()
             })
             const { error, value } = subTaskPrioritySchema.validate(req.body)
 

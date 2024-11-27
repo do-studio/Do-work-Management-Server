@@ -4,26 +4,22 @@ import { SubTaskModel } from "../models/subTasks.js";
 
 const taskHelpers = {
   getProjectByPeople: async () => {
-
-
-
-
     const today = new Date();  // Get today's date in local timezone
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);  // Start of the day (00:00:00)
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);  // End of the day at 18:30 (6:30 PM)
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
     // Convert to UTC if you want to compare in UTC
-    const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
+    const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
 
     console.log("startOfDay (local):", startOfDay.toISOString());
-    console.log("endOfDay (local):", endOfDay.toISOString());
     console.log("startOfDay (UTC):", startOfDayUTC.toISOString());
     console.log("endOfDay (UTC):", endOfDayUTC.toISOString());
 
     // Query for documents where dueDate is between the start and end of the day
     const tasks = await SubTaskModel.find({
-      dueDate: endOfDayUTC.toISOString()
-    });
+      dueDate: { $gte: startOfDayUTC.toISOString(), $lte: endOfDayUTC.toISOString() },
+      status: { $ne: "done" }
+    }).sort({ dueDate: 1 });;
 
     return tasks
   },

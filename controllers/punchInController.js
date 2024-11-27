@@ -1,6 +1,7 @@
 import PunchInRecord from "../models/punchInRecord.js";
 import PunchOutRecord from "../models/punchOutRecord.js";
 import mongoose, { Types } from 'mongoose'
+import UserModel from "../models/user.js";
 
 
 
@@ -283,18 +284,21 @@ const punchInControllers = () => {
             const today = new Date().toISOString().slice(0, 10);
             const startOfDay = new Date(today + 'T00:00:00.000Z');
             const endOfDay = new Date(today + 'T23:59:59.999Z');
-
+    
+            // Get all users
+            const users = await UserModel.find({ role: 'roleUser' }); // Fetch all users
+    
             // Get all punch-in records for today
             const punchInRecords = await PunchInRecord.find({
                 punchInTime: {
                     $gte: startOfDay,
                     $lte: endOfDay
-                }
-                , status: "true"
+                },
+                status: "true"
             })
-                .populate('userId', 'userName email profilePhotoURL') // Populate user details - adjust fields as needed
+                .populate('userId', 'userName email profilePhotoURL') // Populate user details
                 .sort({ punchInTime: -1 });
-
+    
             // Get all punch-out records for today
             const punchOutRecords = await PunchOutRecord.find({
                 punchOutTime: {
@@ -303,46 +307,47 @@ const punchInControllers = () => {
                 },
                 status: "true"
             }).lean();
-
+    
             // Create a map of punch-out records by userId for easier lookup
             const punchOutMap = new Map(
                 punchOutRecords.map(record => [record.userId.toString(), record])
             );
-
-            // Combine punch-in and punch-out records
-            const combinedRecords = punchInRecords.map(punchIn => {
-                const punchInObj = punchIn.toObject();
-                const punchOut = punchOutMap.get(punchInObj.userId._id.toString());
-
+    
+            // Combine users with their punch-in and punch-out records
+            const combinedRecords = users.map(user => {
+                const punchIn = punchInRecords.find(record => record.userId._id.toString() === user._id.toString());
+                const punchOut = punchIn ? punchOutMap.get(punchIn.userId._id.toString()) : null;
+    
                 return {
-                    userId: punchInObj.userId._id,
-                    userName: punchInObj.userId.userName,
-                    profilePhotoURL: punchInObj.userId.profilePhotoURL,
-                    email: punchInObj.userId.email,
-                    punchInTime: punchInObj.punchInTime,
-                    punchInLocation: punchInObj.punchInLocation,
-                    distance: punchInObj.distance,
-                    punchOutTime: punchOut?.punchOutTime || null,
-                    punchOutLocation: punchOut?.punchOutLocation || null,
-                    workingMode: punchInObj?.workingMode,
-                    status: punchOut ? 'completed' : 'present',
-                    workingHours: punchOut ?
-                        ((new Date(punchOut.punchOutTime) - new Date(punchInObj.punchInTime)) / (1000 * 60 * 60)).toFixed(2)
+                    userId: user._id,
+                    userName: user.userName,
+                    profilePhotoURL: user.profilePhotoURL,
+                    email: user.email,
+                    punchInTime: punchIn ? punchIn.punchInTime : null,
+                    punchInLocation: punchIn ? punchIn.punchInLocation : null,
+                    distance: punchIn ? punchIn.distance : null,
+                    punchOutTime: punchOut ? punchOut.punchOutTime : null,
+                    punchOutLocation: punchOut ? punchOut.punchOutLocation : null,
+                    workingMode: punchIn ? punchIn.workingMode : null,
+                    status: punchIn ? (punchOut ? 'completed' : 'present') : 'absent', // Mark as absent if no punch-in
+                    workingHours: punchOut ? 
+                        ((new Date(punchOut.punchOutTime) - new Date(punchIn.punchInTime)) / (1000 * 60 * 60)).toFixed(2) 
                         : null
                 };
             });
-
+    
             // Calculate summary statistics
             const summary = {
                 totalRecords: combinedRecords.length,
                 activeEmployees: combinedRecords.filter(record => record.status === 'present').length,
                 completedShifts: combinedRecords.filter(record => record.status === 'completed').length,
+                absentEmployees: combinedRecords.filter(record => record.status === 'absent').length,
                 averageWorkingHours: combinedRecords
                     .filter(record => record.workingHours)
-                    .reduce((acc, curr) => acc + parseFloat(curr.workingHours), 0) /
+                    .reduce((acc, curr) => acc + parseFloat(curr.workingHours), 0) / 
                     combinedRecords.filter(record => record.workingHours).length || 0
             };
-
+    
             res.status(200).json({
                 status: true,
                 data: {
@@ -350,7 +355,7 @@ const punchInControllers = () => {
                     summary
                 }
             });
-
+    
         } catch (error) {
             console.error('Error in getTodayAttendance:', error);
             res.status(500).json({
@@ -360,6 +365,7 @@ const punchInControllers = () => {
             });
         }
     };
+    
 
     const getUserAttendanceReport = async (req, res) => {
         try {
