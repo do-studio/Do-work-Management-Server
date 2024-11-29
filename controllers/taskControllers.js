@@ -78,6 +78,7 @@ const taskControllers = () => {
             console.log("Requested user id", id);
 
             const projectResponse = await taskHelpers.getSingleProjectIndividual(projectId, id);
+            
             if (projectResponse.length) {
                 return res.status(200).json({ status: true, data: projectResponse });
             }
@@ -319,67 +320,67 @@ const taskControllers = () => {
 
     const getProjectByClient = async (req, res) => {
         try {
-          const { id } = req.payload;
-          const { projectId } = req.params;
-          console.log("Requested user id", id);
-      
-          // Get project response
-          const projectResponse = await taskHelpers.getProjectByClient(projectId, id);
-      
-          // Get clients and their names
-          const clients = await ClientModel.find();
-          const clientNames = clients.map(client => client.client);
-      
-          // Initialize result array
-          const result = [];
-      
-          // Iterate through client names in order
-          for (const clientName of clientNames) {
-            // Find tasks for this specific client
-            const filteredTasks = projectResponse.filter(task => 
-              task.client === clientName || 
-              task.subTasks?.some(subtask => subtask.client === clientName)
-            );
-      
-            // If there are tasks for this client, add to result
-            if (filteredTasks.length > 0) {
-              result.push({
-                clientName,
-                tasks: filteredTasks.map(task => {
-                  // Use _doc to get the plain object, or spread the task if _doc doesn't exist
-                  const taskData = task._doc || task;
-                  
-                  // Remove Mongoose-specific metadata
-                  const { $__, $isNew, ...cleanTask } = taskData;
-                  
-                  return {
-                    ...cleanTask,
-                    // Ensure subtasks are also cleaned
-                    subTasks: (cleanTask.subTasks || []).map(subtask => {
-                      const { $__, $isNew, ...cleanSubtask } = subtask._doc || subtask;
-                      return cleanSubtask;
-                    })
-                  };
-                })
-              });
+            const { id } = req.payload;
+            const { projectId } = req.params;
+            console.log("Requested user id", id);
+
+            // Get project response
+            const projectResponse = await taskHelpers.getProjectByClient(projectId, id);
+
+            // Get clients and their names
+            const clients = await ClientModel.find();
+            const clientNames = clients.map(client => client.client);
+
+            // Initialize result array
+            const result = [];
+
+            // Iterate through client names in order
+            for (const clientName of clientNames) {
+                // Find tasks for this specific client
+                const filteredTasks = projectResponse.filter(task =>
+                    task.client === clientName ||
+                    task.subTasks?.some(subtask => subtask.client === clientName)
+                );
+
+                // If there are tasks for this client, add to result
+                if (filteredTasks.length > 0) {
+                    result.push({
+                        clientName,
+                        tasks: filteredTasks.map(task => {
+                            // Use _doc to get the plain object, or spread the task if _doc doesn't exist
+                            const taskData = task._doc || task;
+
+                            // Remove Mongoose-specific metadata
+                            const { $__, $isNew, ...cleanTask } = taskData;
+
+                            return {
+                                ...cleanTask,
+                                // Ensure subtasks are also cleaned
+                                subTasks: (cleanTask.subTasks || []).map(subtask => {
+                                    const { $__, $isNew, ...cleanSubtask } = subtask._doc || subtask;
+                                    return cleanSubtask;
+                                })
+                            };
+                        })
+                    });
+                }
             }
-          }
-      
-          // Return response
-          if (result.length) {
-            return res.status(200).json({ status: true, data: result });
-          }
-      
-          return res.status(200).json({ 
-            status: false, 
-            message: "No tasks found for clients in the project" 
-          });
-      
+
+            // Return response
+            if (result.length) {
+                return res.status(200).json({ status: true, data: result });
+            }
+
+            return res.status(200).json({
+                status: false,
+                message: "No tasks found for clients in the project"
+            });
+
         } catch (error) {
-          console.error("Error in getProjectByClient:", error);
-          return res.status(500).json({ status: false, message: "Internal error" });
+            console.error("Error in getProjectByClient:", error);
+            return res.status(500).json({ status: false, message: "Internal error" });
         }
-      };
+    };
 
 
     return {

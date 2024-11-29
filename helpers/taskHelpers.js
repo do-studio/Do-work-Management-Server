@@ -10,17 +10,28 @@ const taskHelpers = {
     // Convert to UTC if you want to compare in UTC
     const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
+    const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
+
+
+
+    const todayTasks = await SubTaskModel.find({
+      dueDate: endOfDayUTC.toISOString(),
+      isActive: true
+    }).sort({ dueDate: 1 });;
 
 
 
     // Query for documents where dueDate is between the start and end of the day
+
     const tasks = await SubTaskModel.find({
-      dueDate: { $gte: startOfDayUTC.toISOString(), $lte: endOfDayUTC.toISOString() },
+      dueDate: { $gte: startOfDayUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
       status: { $ne: "done" },
       isActive: true
     }).sort({ dueDate: 1 });;
+    const combinedTasks = [...todayTasks, ...tasks];
 
-    return tasks
+
+    return combinedTasks
   },
   getProjectByClient: async () => {
     const today = new Date();  // Get today's date in local timezone
@@ -235,11 +246,22 @@ const taskHelpers = {
     const projectId = new mongoose.Types.ObjectId(projectid);
     const userId = new mongoose.Types.ObjectId(userid);
 
+    const today = new Date();  // Get today's date in local timezone
+
+    // Convert to UTC if you want to compare in UTC
+    const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
+    const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
+
+
+
+
+
     const projects = await TaskModel.aggregate([
       {
         $match: {
           isActive: true,
-          projectId
+          projectId,
+
         }
       },
       {
@@ -260,11 +282,12 @@ const taskHelpers = {
                 $expr: {
                   $and: [
                     { $eq: ["$taskId", "$$taskId"] },
-                    { $eq: ["$isActive", true] }
+                    { $eq: ["$isActive", true] },
                   ]
                 }
               }
             },
+
             {
               $lookup: {
                 from: "users",
@@ -287,7 +310,8 @@ const taskHelpers = {
             },
             {
               $match: {
-                "people._id": userId
+                "people._id": userId,
+
               }
             },
 
