@@ -281,11 +281,36 @@ const punchInControllers = () => {
     const getTodayAttendance = async (req, res) => {
         try {
             // Get today's date range
+            const { date } = req.body
+
+            const parsedDate = new Date(date);
+
+
+
             const today = new Date().toISOString().slice(0, 10);
-            const startOfDay = new Date(today + 'T00:00:00.000Z');
-            const endOfDay = new Date(today + 'T23:59:59.999Z');
+
+
+            // const startOfDay = new Date(today + 'T00:00:00.000Z');
+            // const endOfDay = new Date(today + 'T23:59:59.999Z');
+
 
             // Get all users
+
+            const year = parsedDate.getUTCFullYear();
+            const month = String(parsedDate.getUTCMonth() + 1).padStart(2, '0'); // Months are 0-based, so add 1
+            const day = String(parsedDate.getUTCDate()).padStart(2, '0'); // Pad 
+
+
+
+            const startOfDay = new Date(`${year}-${month}-${day}T00:00:00.000Z`);
+
+            // Calculate the end of the day (23:59:59.999)
+            const endOfDay = new Date(`${year}-${month}-${day}T23:59:59.999Z`);
+
+            console.log('Start of Day:', startOfDay);
+            console.log('End of Day:', endOfDay);
+
+
             const users = await UserModel.find({ role: 'roleUser', isActive: true }); // Fetch all users
 
             // Get all punch-in records for today
@@ -369,7 +394,8 @@ const punchInControllers = () => {
 
     const getUserAttendanceReport = async (req, res) => {
         try {
-            const userId = req.params.id;
+            const userId = req.params.id ;
+
             let { startDate, endDate } = req.body;
 
             // Parse dates and validate them
