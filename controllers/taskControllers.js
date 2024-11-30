@@ -78,7 +78,7 @@ const taskControllers = () => {
             console.log("Requested user id", id);
 
             const projectResponse = await taskHelpers.getSingleProjectIndividual(projectId, id);
-            
+
             if (projectResponse.length) {
                 return res.status(200).json({ status: true, data: projectResponse });
             }
@@ -328,7 +328,7 @@ const taskControllers = () => {
             const projectResponse = await taskHelpers.getProjectByClient(projectId, id);
 
             // Get clients and their names
-            const clients = await ClientModel.find();
+            const clients = await ClientModel.find().sort({ client: 1 });
             const clientNames = clients.map(client => client.client);
 
             // Initialize result array
