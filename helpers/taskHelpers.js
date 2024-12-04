@@ -29,6 +29,8 @@ const taskHelpers = {
       isActive: true
     }).sort({ dueDate: 1 });;
     const combinedTasks = [...todayTasks, ...tasks];
+    console.log("saved");
+    
 
 
     return combinedTasks
