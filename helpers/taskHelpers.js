@@ -28,12 +28,17 @@ const taskHelpers = {
       status: { $ne: "done" },
       isActive: true
     }).sort({ dueDate: 1 });;
-    const combinedTasks = [...todayTasks, ...tasks];
-    console.log("saved");
+
+
+    console.log("end of the day", endOfDayUTC);
+    console.log("start of the day", startOfDayUTC);
+    console.log("oneDayBeforeUTC", oneDayBeforeUTC);
     
+    const combinedTasks = [...todayTasks, ...tasks];
 
 
-    return combinedTasks
+
+    return todayTasks
   },
   getProjectByClient: async () => {
     const today = new Date();  // Get today's date in local timezone
