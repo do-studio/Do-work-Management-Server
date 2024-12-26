@@ -326,6 +326,7 @@ const taskControllers = () => {
 
             // Get project response
             const projectResponse = await taskHelpers.getProjectByClient(projectId, id);
+            return res.status(200).json(projectResponse)
 
             // Get clients and their names
             const clients = await ClientModel.find().sort({ client: 1 });

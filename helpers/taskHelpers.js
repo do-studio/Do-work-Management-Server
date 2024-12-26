@@ -33,7 +33,7 @@ const taskHelpers = {
     console.log("end of the day", endOfDayUTC);
     console.log("start of the day", startOfDayUTC);
     console.log("oneDayBeforeUTC", oneDayBeforeUTC);
-    
+
     const combinedTasks = [...todayTasks, ...tasks];
 
 
@@ -41,27 +41,171 @@ const taskHelpers = {
     return todayTasks
   },
   getProjectByClient: async () => {
-    const today = new Date();  // Get today's date in local timezone
-
-    // Convert to UTC if you want to compare in UTC
+    const today = new Date();
     const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
-    // const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth() + 1, 0, 18, 30, 0, 0));
 
+    const pipeline = [
+      // Match subtasks within date range and active status
+      {
+        $match: {
+          dueDate: {
+            $gte: startOfDayUTC.toISOString(),
+            $lte: endOfDayUTC.toISOString()
+          },
+          status: { $ne: "done" },
+          isActive: true
+        }
+      },
+      // Look up the parent task
+      {
+        $lookup: {
+          from: 'tasks',
+          localField: 'taskId',
+          foreignField: '_id',
+          as: 'taskDetails'
+        }
+      },
+      // Unwind the taskDetails array
+      {
+        $unwind: '$taskDetails'
+      },
+      // Look up chats for each subtask
+      {
+        $lookup: {
+          from: 'chats',
+          localField: '_id',
+          foreignField: 'roomId',
+          pipeline: [
+            {
+              $match: {
+                isActive: true
+              }
+            },
+            // Look up sender details from users collection
+            {
+              $lookup: {
+                from: 'users',
+                localField: 'sender',
+                foreignField: '_id',
+                as: 'senderDetails'
+              }
+            },
+            {
+              $unwind: '$senderDetails'
+            },
+            // Project only needed fields from sender
+            {
+              $project: {
+                _id: 1,
+                message: 1,
+                type: 1,
+                url: 1,
+                createdAt: 1,
+                sender: {
+                  _id: '$senderDetails._id',
+                  name: '$senderDetails.name',
+                  email: '$senderDetails.email',
+                  profilePhotoURL: '$senderDetails.profilePhotoURL',
+                  userName:`$senderDetails.userName`
+                }
+              }
+            }
+          ],
+          as: 'chats'
+        }
+      },
+      // Look up people details
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'people',
+          foreignField: '_id',
+          as: 'assignedPeople'
+        }
+      },
+      // Group by client
+      {
+        $group: {
+          _id: '$client',
+          tasks: {
+            $push: {
+              _id: '$taskDetails._id',
+              name: '$taskDetails.name',
+              headers: '$taskDetails.headers',
+              order: '$taskDetails.order',
+              subTasks: {
+                _id: '$_id',
+                task: '$task',
+                status: '$status',
+                dueDate: '$dueDate',
+                priority: '$priority',
+                notes: '$notes',
+                people: '$assignedPeople',
+                order: '$order',
+                chats: '$chats'
+              }
+            }
+          }
+        }
+      },
+      // Final project to format the output
+      {
+        $project: {
+          clientName: '$_id',
+          tasks: {
+            $map: {
+              input: '$tasks',
+              as: 'task',
+              in: {
+                _id: '$$task._id',
+                name: '$$task.name',
+                headers: '$$task.headers',
+                order: '$$task.order',
+                subTasks: {
+                  _id: '$$task.subTasks._id',
+                  task: '$$task.subTasks.task',
+                  status: '$$task.subTasks.status',
+                  dueDate: '$$task.subTasks.dueDate',
+                  priority: '$$task.subTasks.priority',
+                  notes: '$$task.subTasks.notes',
+                  people: {
+                    $map: {
+                      input: '$$task.subTasks.people',
+                      as: 'person',
+                      in: {
+                        _id: '$$person._id',
+                        name: '$$person.name',
+                        email: '$$person.email'
+                      }
+                    }
+                  },
+                  order: '$$task.subTasks.order',
+                  chats: '$$task.subTasks.chats'
+                }
+              }
+            }
+          }
+        }
+      },
+      // Sort by client name
+      {
+        $sort: {
+          clientName: 1
+        }
+      }
+    ];
 
-    console.log("Starting date : ", startOfDayUTC);
-    console.log("Ending date : ", endOfDayUTC);
+    const result = await SubTaskModel.aggregate(pipeline);
 
+    if (result.length) {
+      return { status: true, data: result };
+    }
 
-
-    // Query for documents where dueDate is between the start and end of the day
-    const tasks = await SubTaskModel.find({
-      dueDate: { $gte: startOfDayUTC.toISOString(), $lte: endOfDayUTC.toISOString() },
-      status: { $ne: "done" },
-      isActive: true
-    }).sort({ dueDate: 1 });;
-
-    return tasks
+    return {
+      status: false,
+      message: "No tasks found for clients in the project"
+    };
   },
   addTask: async (taskData) => {
     const newTask = new TaskModel(taskData)
