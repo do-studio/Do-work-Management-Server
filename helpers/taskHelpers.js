@@ -33,12 +33,12 @@ const taskHelpers = {
     console.log("end of the day", endOfDayUTC);
     console.log("start of the day", startOfDayUTC);
     console.log("oneDayBeforeUTC", oneDayBeforeUTC);
-
+    
     const combinedTasks = [...todayTasks, ...tasks];
 
 
 
-    return todayTasks
+    return combinedTasks
   },
   getProjectByClient: async () => {
     const today = new Date();
