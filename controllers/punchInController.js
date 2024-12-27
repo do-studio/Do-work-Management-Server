@@ -394,8 +394,7 @@ const punchInControllers = () => {
 
     const getUserAttendanceReport = async (req, res) => {
         try {
-            const userId = req.params.id ;
-
+            const userId = req.params.id;
             let { startDate, endDate } = req.body;
 
             // Parse dates and validate them
@@ -410,8 +409,11 @@ const punchInControllers = () => {
                 });
             }
 
+            console.log(req.body);
+
             // Get all punch-in records
             const punchInRecords = await PunchInRecord.find({
+                status: "true",
                 userId: userId,
                 punchInTime: {
                     $gte: parsedStartDate,
@@ -419,33 +421,36 @@ const punchInControllers = () => {
                 }
             }).populate('userId', 'userName profilePhotoURL').sort({ punchInTime: 1 });
 
+            // Get all punch-out records for the same period
+            const punchOutRecords = await PunchOutRecord.find({
+                userId: userId,
+                status: "true",
+                punchOutTime: {
+                    $gte: parsedStartDate,
+                    $lte: parsedEndDate
+                }
+            });
+
+            // Create a map of punch-out records keyed by date
+            const punchOutMap = new Map();
+            punchOutRecords.forEach(record => {
+                const date = new Date(record.punchOutTime).toISOString().slice(0, 10);
+                punchOutMap.set(date, record);
+            });
+
             // Get user details from the first punch-in record
             const userDetails = punchInRecords.length > 0 ? {
                 userName: punchInRecords[0].userId.userName,
                 profilePhotoURL: punchInRecords[0].userId.profilePhotoURL
             } : null;
 
-            // Get all punch-out records
-            const punchOutRecords = await PunchOutRecord.find({
-                userId: userId,
-                punchOutTime: {
-                    $gte: parsedStartDate,
-                    $lte: parsedEndDate
-                }
-            }).lean();
-
-            // Create a map of punch-out records by date for easier lookup
-            const punchOutMap = new Map(
-                punchOutRecords.map(record => [
-                    new Date(record.punchOutTime).toISOString().slice(0, 10),
-                    record
-                ])
-            );
 
             // Combine punch-in and punch-out records
             const dailyRecords = punchInRecords.map(punchIn => {
                 const punchInDate = new Date(punchIn.punchInTime).toISOString().slice(0, 10);
                 const punchOut = punchOutMap.get(punchInDate);
+                console.log(punchOut);
+
 
                 return {
                     date: punchInDate,
