@@ -33,7 +33,7 @@ const taskHelpers = {
     console.log("end of the day", endOfDayUTC);
     console.log("start of the day", startOfDayUTC);
     console.log("oneDayBeforeUTC", oneDayBeforeUTC);
-
+    
     const combinedTasks = [...todayTasks, ...tasks];
 
 
@@ -107,7 +107,7 @@ const taskHelpers = {
                   name: '$senderDetails.name',
                   email: '$senderDetails.email',
                   profilePhotoURL: '$senderDetails.profilePhotoURL',
-                  userName: `$senderDetails.userName`
+                  userName:`$senderDetails.userName`
                 }
               }
             }
@@ -394,16 +394,14 @@ const taskHelpers = {
   },
 
   getSingleProjectIndividual: async (projectid, userid) => {
+    const projectId = new mongoose.Types.ObjectId(projectid);
     const userId = new mongoose.Types.ObjectId(userid);
 
     const today = new Date();  // Get today's date in local timezone
 
-
-
     // Convert to UTC if you want to compare in UTC
     const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
-    const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
 
 
 
@@ -413,15 +411,17 @@ const taskHelpers = {
       {
         $match: {
           isActive: true,
-        },
+          projectId,
+
+        }
       },
       {
         $project: {
           isActive: 0,
           createdAt: 0,
           updatedAt: 0,
-          __v: 0,
-        },
+          __v: 0
+        }
       },
       {
         $lookup: {
@@ -434,12 +434,11 @@ const taskHelpers = {
                   $and: [
                     { $eq: ["$taskId", "$$taskId"] },
                     { $eq: ["$isActive", true] },
-                  ],
-                },
-                // Filter by dueDate range
-                dueDate: endOfDayUTC.toISOString(),
-              },
+                  ]
+                }
+              }
             },
+
             {
               $lookup: {
                 from: "users",
@@ -447,24 +446,26 @@ const taskHelpers = {
                 pipeline: [
                   {
                     $match: {
-                      $expr: { $in: ["$_id", "$$peopleIds"] },
-                    },
+                      $expr: { $in: ["$_id", "$$peopleIds"] }
+                    }
                   },
                   {
                     $project: {
                       userName: 1,
-                      profilePhotoURL: 1,
-                    },
-                  },
+                      profilePhotoURL: 1
+                    }
+                  }
                 ],
-                as: "people",
-              },
+                as: "people"
+              }
             },
             {
               $match: {
                 "people._id": userId,
-              },
+
+              }
             },
+
             {
               $lookup: {
                 from: "unreadchats",
@@ -473,18 +474,18 @@ const taskHelpers = {
                 pipeline: [
                   {
                     $match: {
-                      userId,
-                    },
+                      userId
+                    }
                   },
                   {
                     $project: {
                       _id: 0,
-                      unreadCount: 1,
-                    },
-                  },
+                      unreadCount: 1
+                    }
+                  }
                 ],
-                as: "chatCount",
-              },
+                as: "chatCount"
+              }
             },
             {
               $lookup: {
@@ -494,46 +495,52 @@ const taskHelpers = {
                 pipeline: [
                   {
                     $match: {
-                      isActive: true,
-                    },
+                      isActive: true
+                    }
                   },
                   {
                     $project: {
                       _id: 0,
-                      isActive: 1,
-                    },
-                  },
+                      isActive: 1
+                    }
+                  }
                 ],
-                as: "chats",
-              },
+                as: "chats"
+              }
             },
             {
               $addFields: {
                 chatUnreadCount: {
                   $ifNull: [
                     {
-                      $arrayElemAt: ["$chatCount.unreadCount", 0],
+                      $arrayElemAt: [
+                        "$chatCount.unreadCount",
+                        0
+                      ]
                     },
-                    0,
-                  ],
+                    0
+                  ]
                 },
                 isChatExists: {
                   $cond: {
                     if: { $gt: [{ $size: "$chats" }, 0] },
                     then: true,
-                    else: false,
-                  },
-                },
-              },
-            },
+                    else: false
+                  }
+                }
+              }
+            }
+            // ... (keep other lookups and fields as in the original function)
+
+
           ],
-          as: "subTasks",
-        },
+          as: "subTasks"
+        }
       },
       {
         $match: {
-          subTasks: { $ne: [] },
-        },
+          "subTasks": { $ne: [] }
+        }
       },
       {
         $addFields: {
@@ -544,31 +551,30 @@ const taskHelpers = {
                   $filter: {
                     input: "$subTasks",
                     as: "subTask",
-                    cond: { $ne: ["$$subTask._id", null] },
-                  },
-                },
+                    cond: { $ne: ["$$subTask._id", null] }
+                  }
+                }
               },
               in: {
                 $sortArray: {
                   input: "$$filteredSubTasks",
-                  sortBy: { order: 1 },
-                },
-              },
-            },
+                  sortBy: { order: 1 }
+                }
+              }
+            }
           },
           headers: {
             $sortArray: {
               input: "$headers",
-              sortBy: { order: 1 },
-            },
-          },
-        },
+              sortBy: { order: 1 }
+            }
+          }
+        }
       },
       {
-        $sort: { order: -1 },
-      },
+        $sort: { order: -1 }
+      }
     ]);
-
 
     return projects;
   },
