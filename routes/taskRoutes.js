@@ -10,7 +10,7 @@ const taskRoutes = ()=>{
     router.get('/getSingleProject/:projectId',controllers.getSingleProject)
     router.get('/getProjectByPeople',controllers.getProjectByPeople)
     router.get('/getProjectByClient',controllers.getProjectByClient)
-    router.get('/getSingleProjectIndivitual/:projectId',controllers.getSingleProjectIndividual)
+    router.get('/getSingleProjectIndivitual',controllers.getSingleProjectIndividual)
     router.put('/removeTask/:projectId',permissionMiddleware("remove"),controllers.removeTask)
     router.patch('/dndTasks',controllers.dndTaskUpdate)
     router.patch('/dndHeaders',controllers.dndHeaderUpdate)
