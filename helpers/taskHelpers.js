@@ -33,7 +33,7 @@ const taskHelpers = {
     console.log("end of the day", endOfDayUTC);
     console.log("start of the day", startOfDayUTC);
     console.log("oneDayBeforeUTC", oneDayBeforeUTC);
-    
+
     const combinedTasks = [...todayTasks, ...tasks];
 
 
@@ -107,7 +107,7 @@ const taskHelpers = {
                   name: '$senderDetails.name',
                   email: '$senderDetails.email',
                   profilePhotoURL: '$senderDetails.profilePhotoURL',
-                  userName:`$senderDetails.userName`
+                  userName: `$senderDetails.userName`
                 }
               }
             }
@@ -394,34 +394,34 @@ const taskHelpers = {
   },
 
   getSingleProjectIndividual: async (projectid, userid) => {
-    const projectId = new mongoose.Types.ObjectId(projectid);
     const userId = new mongoose.Types.ObjectId(userid);
 
     const today = new Date();  // Get today's date in local timezone
 
+
+
     // Convert to UTC if you want to compare in UTC
     const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
+    const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
 
 
 
 
 
-    const projects = await TaskModel.aggregate([
+    const projects1 = await TaskModel.aggregate([
       {
         $match: {
           isActive: true,
-          projectId,
-
-        }
+        },
       },
       {
         $project: {
           isActive: 0,
           createdAt: 0,
           updatedAt: 0,
-          __v: 0
-        }
+          __v: 0,
+        },
       },
       {
         $lookup: {
@@ -434,11 +434,14 @@ const taskHelpers = {
                   $and: [
                     { $eq: ["$taskId", "$$taskId"] },
                     { $eq: ["$isActive", true] },
-                  ]
-                }
-              }
+                  ],
+                },
+                // Filter by dueDate range
+                // dueDate: endOfDayUTC.toISOString(),
+                dueDate: { $gte: startOfDayUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
+                status: { $ne: "done" },
+              },
             },
-
             {
               $lookup: {
                 from: "users",
@@ -446,26 +449,24 @@ const taskHelpers = {
                 pipeline: [
                   {
                     $match: {
-                      $expr: { $in: ["$_id", "$$peopleIds"] }
-                    }
+                      $expr: { $in: ["$_id", "$$peopleIds"] },
+                    },
                   },
                   {
                     $project: {
                       userName: 1,
-                      profilePhotoURL: 1
-                    }
-                  }
+                      profilePhotoURL: 1,
+                    },
+                  },
                 ],
-                as: "people"
-              }
+                as: "people",
+              },
             },
             {
               $match: {
                 "people._id": userId,
-
-              }
+              },
             },
-
             {
               $lookup: {
                 from: "unreadchats",
@@ -474,18 +475,18 @@ const taskHelpers = {
                 pipeline: [
                   {
                     $match: {
-                      userId
-                    }
+                      userId,
+                    },
                   },
                   {
                     $project: {
                       _id: 0,
-                      unreadCount: 1
-                    }
-                  }
+                      unreadCount: 1,
+                    },
+                  },
                 ],
-                as: "chatCount"
-              }
+                as: "chatCount",
+              },
             },
             {
               $lookup: {
@@ -495,52 +496,46 @@ const taskHelpers = {
                 pipeline: [
                   {
                     $match: {
-                      isActive: true
-                    }
+                      isActive: true,
+                    },
                   },
                   {
                     $project: {
                       _id: 0,
-                      isActive: 1
-                    }
-                  }
+                      isActive: 1,
+                    },
+                  },
                 ],
-                as: "chats"
-              }
+                as: "chats",
+              },
             },
             {
               $addFields: {
                 chatUnreadCount: {
                   $ifNull: [
                     {
-                      $arrayElemAt: [
-                        "$chatCount.unreadCount",
-                        0
-                      ]
+                      $arrayElemAt: ["$chatCount.unreadCount", 0],
                     },
-                    0
-                  ]
+                    0,
+                  ],
                 },
                 isChatExists: {
                   $cond: {
                     if: { $gt: [{ $size: "$chats" }, 0] },
                     then: true,
-                    else: false
-                  }
-                }
-              }
-            }
-            // ... (keep other lookups and fields as in the original function)
-
-
+                    else: false,
+                  },
+                },
+              },
+            },
           ],
-          as: "subTasks"
-        }
+          as: "subTasks",
+        },
       },
       {
         $match: {
-          "subTasks": { $ne: [] }
-        }
+          subTasks: { $ne: [] },
+        },
       },
       {
         $addFields: {
@@ -551,32 +546,224 @@ const taskHelpers = {
                   $filter: {
                     input: "$subTasks",
                     as: "subTask",
-                    cond: { $ne: ["$$subTask._id", null] }
-                  }
-                }
+                    cond: { $ne: ["$$subTask._id", null] },
+                  },
+                },
               },
               in: {
                 $sortArray: {
                   input: "$$filteredSubTasks",
-                  sortBy: { order: 1 }
-                }
-              }
-            }
+                  sortBy: { order: 1 },
+                },
+              },
+            },
           },
           headers: {
             $sortArray: {
               input: "$headers",
-              sortBy: { order: 1 }
-            }
-          }
-        }
+              sortBy: { order: 1 },
+            },
+          },
+        },
       },
       {
-        $sort: { order: -1 }
-      }
+        $sort: { order: -1 },
+      },
     ]);
 
-    return projects;
+    const projects2 = await TaskModel.aggregate([
+      {
+        $match: {
+          isActive: true,
+        },
+      },
+      {
+        $project: {
+          isActive: 0,
+          createdAt: 0,
+          updatedAt: 0,
+          __v: 0,
+        },
+      },
+      {
+        $lookup: {
+          from: "subtasks",
+          let: { taskId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$taskId", "$$taskId"] },
+                    { $eq: ["$isActive", true] },
+                  ],
+                },
+                // Filter by dueDate range
+                dueDate: endOfDayUTC.toISOString(),
+                // dueDate: { $gte: startOfDayUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
+                // status: { $ne: "done" },
+              },
+            },
+            {
+              $lookup: {
+                from: "users",
+                let: { peopleIds: "$people" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $in: ["$_id", "$$peopleIds"] },
+                    },
+                  },
+                  {
+                    $project: {
+                      userName: 1,
+                      profilePhotoURL: 1,
+                    },
+                  },
+                ],
+                as: "people",
+              },
+            },
+            {
+              $match: {
+                "people._id": userId,
+              },
+            },
+            {
+              $lookup: {
+                from: "unreadchats",
+                localField: "_id",
+                foreignField: "roomId",
+                pipeline: [
+                  {
+                    $match: {
+                      userId,
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      unreadCount: 1,
+                    },
+                  },
+                ],
+                as: "chatCount",
+              },
+            },
+            {
+              $lookup: {
+                from: "chats",
+                localField: "_id",
+                foreignField: "roomId",
+                pipeline: [
+                  {
+                    $match: {
+                      isActive: true,
+                    },
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      isActive: 1,
+                    },
+                  },
+                ],
+                as: "chats",
+              },
+            },
+            {
+              $addFields: {
+                chatUnreadCount: {
+                  $ifNull: [
+                    {
+                      $arrayElemAt: ["$chatCount.unreadCount", 0],
+                    },
+                    0,
+                  ],
+                },
+                isChatExists: {
+                  $cond: {
+                    if: { $gt: [{ $size: "$chats" }, 0] },
+                    then: true,
+                    else: false,
+                  },
+                },
+              },
+            },
+          ],
+          as: "subTasks",
+        },
+      },
+      {
+        $match: {
+          subTasks: { $ne: [] },
+        },
+      },
+      {
+        $addFields: {
+          subTasks: {
+            $let: {
+              vars: {
+                filteredSubTasks: {
+                  $filter: {
+                    input: "$subTasks",
+                    as: "subTask",
+                    cond: { $ne: ["$$subTask._id", null] },
+                  },
+                },
+              },
+              in: {
+                $sortArray: {
+                  input: "$$filteredSubTasks",
+                  sortBy: { order: 1 },
+                },
+              },
+            },
+          },
+          headers: {
+            $sortArray: {
+              input: "$headers",
+              sortBy: { order: 1 },
+            },
+          },
+        },
+      },
+      {
+        $sort: { order: -1 },
+      },
+    ]);
+
+    const combinedResult = [...projects1, ...projects2];
+
+    // Combine tasks with the same name and merge their subtasks
+    const mergedResult = combinedResult.reduce((acc, current) => {
+      const existingTaskIndex = acc.findIndex(task => task.name === current.name);
+
+      if (existingTaskIndex === -1) {
+        // Task with this name doesn't exist, add it
+        acc.push(current);
+      } else {
+        // Task with this name exists, merge subtasks
+        const existingTask = acc[existingTaskIndex];
+
+        acc[existingTaskIndex] = {
+          ...existingTask,
+          subTasks: [
+            ...existingTask.subTasks,
+            ...current.subTasks,
+          ],
+        };
+      }
+
+      return acc;
+    }, []);
+
+    // Optional: Sort subtasks within each task
+    mergedResult.forEach(task => {
+      task.subTasks.sort((a, b) => a.order - b.order); // Adjust the sort field as needed
+    });
+
+    return mergedResult;
   },
   removeTask: async (taskId) => {
     return await TaskModel.updateOne({ _id: taskId }, { $set: { isActive: false } })

@@ -13,8 +13,8 @@ const ClientSchema = new Schema(
             default: "#05438a",
             required: true,
         }
+    }, { timestamps: true }
 
-    }
 )
 
 

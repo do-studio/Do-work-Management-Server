@@ -14,7 +14,7 @@ const clientHelpers = {
     return await ClientModel.findOne({ client }, { _id: 1 })
   },
   getAllClients: async () => {
-    return await ClientModel.find({}, { __v: 0 })
+    return await ClientModel.find({}, { __v: 0 }).sort({ createdAt: -1 })
   },
   deleteClientById: async (id) => {
     const deletedClient = await ClientModel.findByIdAndDelete(id);
