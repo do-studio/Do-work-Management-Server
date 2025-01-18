@@ -2,17 +2,101 @@ import Joi from "joi"
 import projectHelpers from "../helpers/projectHelpers.js"
 import userHelpers from "../helpers/userHelpers.js"
 import notificationHelpers from "../helpers/notificationHelpers.js"
+import ProjectModel from "../models/projects.js"
 
 
 const projectControllers = () => {
 
     const getAllProjects = async (req, res) => {
         try {
-            const projectResponse = await projectHelpers.getAllProjects()
-            if (projectResponse.length) {
-                return res.status(200).json({ status: true, data: projectResponse })
-            }
-            return res.status(200).json({ status: false, message: "No projects found" })
+            const projectResponse = await ProjectModel.aggregate([
+                {
+                    $match: {
+                        isActive: true, // Include only active projects
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "tasks", // Name of the Task collection
+                        let: { projectId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ["$projectId", "$$projectId"] },
+                                            { $eq: ["$isActive", true] }, // Include only active tasks
+                                        ],
+                                    },
+                                },
+                            },
+                        ],
+                        as: "tasks",
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "subtasks", // Name of the Subtask collection
+                        let: { taskIds: "$tasks._id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $in: ["$taskId", "$$taskIds"] },
+                                            { $eq: ["$isActive", true] }, // Include only active subtasks
+                                        ],
+                                    },
+                                },
+                            },
+                        ],
+                        as: "allSubtasks", // For total subtasks
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "subtasks", // Name of the Subtask collection
+                        let: { taskIds: "$tasks._id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $in: ["$taskId", "$$taskIds"] },
+                                            { $eq: ["$isActive", true] }, // Include only active subtasks
+                                            { $ne: ["$status", "done"] }, // Exclude subtasks with status "done"
+                                        ],
+                                    },
+                                },
+                            },
+                        ],
+                        as: "pendingSubtasks", // For pending subtasks
+                    },
+                },
+                {
+                    $addFields: {
+                        totalTaskCount: { $size: "$allSubtasks" }, // Count all subtasks
+                        pendingTaskCount: { $size: "$pendingSubtasks" }, // Count pending subtasks
+                    },
+                },
+                {
+                    $sort: {
+                        createdAt: -1, // Sort projects by createdAt in descending order
+                    },
+                },
+                {
+                    $project: {
+                        name: 1, // Include the project name
+                        totalTaskCount: 1, // Include the total task count
+                        pendingTaskCount: 1, // Include the pending task count
+                    },
+                },
+            ]);
+
+            return res.status(200).json({
+                status: true,
+                data: projectResponse.length ? projectResponse : "No projects found",
+            });
         } catch (error) {
             throw new Error(`Error getting projects: ${error.message}`);
         }
