@@ -87,6 +87,7 @@ const projectControllers = () => {
                 {
                     $project: {
                         name: 1, // Include the project name
+                        createdAt: 1,
                         totalTaskCount: 1, // Include the total task count
                         pendingTaskCount: 1, // Include the pending task count
                     },
