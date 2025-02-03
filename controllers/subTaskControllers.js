@@ -29,7 +29,6 @@ const subTaskControllers = () => {
             const assigner = req.payload.id
 
             
-            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
             
             const allHeaders = await headerHelpers.getAllHeaders()
             const subTask = { taskId }
