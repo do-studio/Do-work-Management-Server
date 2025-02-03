@@ -8,7 +8,8 @@ const taskHelpers = {
     const today = new Date();  // Get today's date in local timezone
 
     // Convert to UTC if you want to compare in UTC
-    const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
+    // const startOfMonthUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
+    const startOfPreviousMonthUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth() - 1, 1, 0, 0, 0, 0)); // Start of previous month
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
     const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
 
@@ -24,14 +25,14 @@ const taskHelpers = {
     // Query for documents where dueDate is between the start and end of the day
 
     const tasks = await SubTaskModel.find({
-      dueDate: { $gte: startOfDayUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
+      dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
       status: { $ne: "done" },
       isActive: true
     }).sort({ dueDate: 1 });;
 
 
     console.log("end of the day", endOfDayUTC);
-    console.log("start of the day", startOfDayUTC);
+    console.log("start of the Month", startOfPreviousMonthUTC);
     console.log("oneDayBeforeUTC", oneDayBeforeUTC);
 
     const combinedTasks = [...todayTasks, ...tasks];
