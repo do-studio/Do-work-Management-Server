@@ -4,6 +4,7 @@ import chatHelpers from "../helpers/chatHelpers.js"
 import headerHelpers from "../helpers/headerHelpers.js"
 import userHelpers from "../helpers/userHelpers.js"
 import notificationHelpers from "../helpers/notificationHelpers.js"
+import { SubTaskModel } from "../models/subTasks.js"
 
 
 const subTaskControllers = () => {
@@ -26,6 +27,10 @@ const subTaskControllers = () => {
                 return res.status(200).json({ status: false, message: "Sub-task name already exists" })
             }
             const assigner = req.payload.id
+
+            
+            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+            
             const allHeaders = await headerHelpers.getAllHeaders()
             const subTask = { taskId }
             if (allHeaders.length) {
@@ -47,7 +52,7 @@ const subTaskControllers = () => {
                 [
                     subTaskHelpers.addSubTask(subTask),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `added a subtask: ${value.taskName}` })
+                    notificationHelpers.addNotification({ assigner, notification: `The task ${value.taskName} has been added.` })
                 ]
             )
 
@@ -73,12 +78,19 @@ const subTaskControllers = () => {
                 return res.status(200).json({ status: false, message: error.details[0].message })
             }
             const assigner = req.payload.id
+            const subTask = await SubTaskModel.findById(value.subTaskId);
+
+            if (!subTask) {
+                return res.status(200).json({ status: false, message: "Subtask not found" });
+            }
+
+            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
 
             const [subTaskNameUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateSubTaskName(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `updated name of a task` })
+                    notificationHelpers.addNotification({ assigner, notification: `The name of the task ${subTaskName} has been changed to ${value.name}` })
                 ]
             )
 
@@ -104,11 +116,19 @@ const subTaskControllers = () => {
             }
             const assigner = req.payload.id
 
+            const subTask = await SubTaskModel.findById(value.subTaskId);
+
+            if (!subTask) {
+                return res.status(200).json({ status: false, message: "Subtask not found" });
+            }
+
+            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+
             const [subTaskNoteUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateSubTaskNote(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `updated note of a task` })
+                    notificationHelpers.addNotification({ assigner, notification: `The note for the task ${subTaskName} has been updated.` })
                 ]
             )
 
@@ -121,31 +141,40 @@ const subTaskControllers = () => {
         }
     }
 
-    const updateSubTaskStatus = async(req,res)=>{
+    const updateSubTaskStatus = async (req, res) => {
         try {
             const subTaskStatusSchema = Joi.object({
                 subTaskId: Joi.string().required(),
                 status: Joi.string().max(25).required()
             })
             const { error, value } = subTaskStatusSchema.validate(req.body)
-    
+
             if (error) {
                 return res.status(200).json({ status: false, message: error.details[0].message })
             }
             const assigner = req.payload.id
 
-            const [subTaskStatusUpdateResponse,userNotificationResponse,notificationResponse] = await Promise.all(
+            // Fetch the subtask to get its name
+            const subTask = await SubTaskModel.findById(value.subTaskId);
+
+            if (!subTask) {
+                return res.status(200).json({ status: false, message: "Subtask not found" });
+            }
+
+            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+
+            const [subTaskStatusUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateSubTaskStatus(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({assigner,notification:`updated status of a task`})
+                    notificationHelpers.addNotification({ assigner, notification: `The status of the ${subTaskName} has been changed to ${value.status}.` })
                 ]
             )
-            
-            if(subTaskStatusUpdateResponse.modifiedCount && notificationResponse){
-                return res.status(200).json({status:true, notification: notificationResponse})
+
+            if (subTaskStatusUpdateResponse.modifiedCount && notificationResponse) {
+                return res.status(200).json({ status: true, notification: notificationResponse })
             }
-            return res.status(200).json({status:false,message:"Error updating status"})
+            return res.status(200).json({ status: false, message: "Error updating status" })
         } catch (error) {
             throw new Error(error.message);
         }
@@ -164,11 +193,19 @@ const subTaskControllers = () => {
             }
             const assigner = req.payload.id
 
+            const subTask = await SubTaskModel.findById(value.subTaskId);
+
+            if (!subTask) {
+                return res.status(200).json({ status: false, message: "Subtask not found" });
+            }
+
+            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+
             const [subTaskClientUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateSubTaskClient(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `updated client of a task` })
+                    notificationHelpers.addNotification({ assigner, notification: `The client for the task ${subTaskName} has been changed to ${value.client}.` })
                 ]
             )
 
@@ -194,11 +231,22 @@ const subTaskControllers = () => {
             }
             const assigner = req.payload.id
 
+            const subTask = await SubTaskModel.findById(value.subTaskId);
+
+            if (!subTask) {
+                return res.status(200).json({ status: false, message: "Subtask not found" });
+            }
+
+            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+
+
+
+
             const [subTaskPriorityUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateSubTaskPriority(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `updated priority of a task` })
+                    notificationHelpers.addNotification({ assigner, notification: `The priority of the task ${subTaskName} has been updated to ${value.priority}.` })
                 ]
             )
 
@@ -224,11 +272,19 @@ const subTaskControllers = () => {
             }
             const assigner = req.payload.id
 
+            const subTask = await SubTaskModel.findById(value.subTaskId);
+
+            if (!subTask) {
+                return res.status(200).json({ status: false, message: "Subtask not found" });
+            }
+
+            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+
             const [subTaskDateUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateDueDate(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `updated due date of a task` })
+                    notificationHelpers.addNotification({ assigner, notification: `The due date for the task ${subTaskName} has been updated to ${value.dueDate}.` })
                 ]
             )
 
@@ -259,7 +315,7 @@ const subTaskControllers = () => {
                 [
                     subTaskHelpers.updateDynamicField(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `updated ${value.field} of a task` })
+                    notificationHelpers.addNotification({ assigner, notification: `updated ${value.field} of a task to ${value.value}` })
                 ]
             )
 
