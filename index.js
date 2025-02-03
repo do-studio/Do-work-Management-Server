@@ -32,7 +32,7 @@ const io = new Server(server, {
 // Socket.io connection
 socketConfig(io)
 
-// Middleware configuration
+// Middleware 
 expressConfig(app)
 
 // Error Handling Middleware
