@@ -28,8 +28,8 @@ const subTaskControllers = () => {
             }
             const assigner = req.payload.id
 
-            
-            
+
+
             const allHeaders = await headerHelpers.getAllHeaders()
             const subTask = { taskId }
             if (allHeaders.length) {
@@ -279,11 +279,23 @@ const subTaskControllers = () => {
 
             const subTaskName = subTask.task; // Assuming the subtask has a `name` field
 
+
+            const formatDueDate = (isoDate) => {
+                return new Date(isoDate).toLocaleString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true
+                });
+            };
+
             const [subTaskDateUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateDueDate(value),
                     userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `The due date for the task ${subTaskName} has been updated to ${value.dueDate}.` })
+                    notificationHelpers.addNotification({ assigner, notification: `The due date for the task ${subTaskName} has been updated to ${formatDueDate(value.dueDate)}.` })
                 ]
             )
 
