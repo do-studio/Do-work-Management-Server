@@ -1,14 +1,14 @@
-import mongoose,{ model, Schema } from "mongoose";
+import mongoose, { model, Schema } from "mongoose";
 
 
-const ChatSchema = new Schema (
+const ChatSchema = new Schema(
     {
-        roomId:{
+        roomId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'subtasks',
             required: true
         },
-        sender:{
+        sender: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'users',
             required: true
@@ -16,14 +16,23 @@ const ChatSchema = new Schema (
         message: {
             type: String
         },
-        isActive:{
+        isActive: {
             type: Boolean,
             default: true
         },
-        type:{
+        typeOfChat: {
             type: String
         },
-        url:{
+        type: {
+            type: String
+        },
+        from: {
+            type: String
+        },
+        to: {
+            type: String
+        },
+        url: {
             type: String
         }
     },
