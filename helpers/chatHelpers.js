@@ -3,7 +3,7 @@ import ChatModel from "../models/chats.js";
 
 
 const chatHelpers = {
-  getChatMessages: async (roomID,skip=0) => {
+  getChatMessages: async (roomID, skip = 0) => {
     const roomId = new mongoose.Types.ObjectId(roomID)
     return await ChatModel.aggregate(
       [
@@ -46,7 +46,10 @@ const chatHelpers = {
             url: 1,
             createdAt: 1,
             user: "$result.userName",
-            profilePhotoURL: "$result.profilePhotoURL"
+            profilePhotoURL: "$result.profilePhotoURL",
+            from: 1,
+            to: 1,
+            typeOfChat: 1
           }
         },
         {

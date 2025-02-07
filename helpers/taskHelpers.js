@@ -402,7 +402,7 @@ const taskHelpers = {
 
 
     // Convert to UTC if you want to compare in UTC
-    const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));
+    const startOfPreviousMonthUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth() - 1, 1, 0, 0, 0, 0)); // Start of previous month
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
     const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
 
@@ -439,7 +439,7 @@ const taskHelpers = {
                 },
                 // Filter by dueDate range
                 // dueDate: endOfDayUTC.toISOString(),
-                dueDate: { $gte: startOfDayUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
+                dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
                 status: { $ne: "done" },
               },
             },

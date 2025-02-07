@@ -5,6 +5,7 @@ import headerHelpers from "../helpers/headerHelpers.js"
 import userHelpers from "../helpers/userHelpers.js"
 import notificationHelpers from "../helpers/notificationHelpers.js"
 import { SubTaskModel } from "../models/subTasks.js"
+import ChatModel from "../models/chats.js"
 
 
 const subTaskControllers = () => {
@@ -145,118 +146,186 @@ const subTaskControllers = () => {
             const subTaskStatusSchema = Joi.object({
                 subTaskId: Joi.string().required(),
                 status: Joi.string().max(25).required()
-            })
-            const { error, value } = subTaskStatusSchema.validate(req.body)
+            });
+
+            const { error, value } = subTaskStatusSchema.validate(req.body);
 
             if (error) {
-                return res.status(200).json({ status: false, message: error.details[0].message })
+                return res.status(200).json({ status: false, message: error.details[0].message });
             }
-            const assigner = req.payload.id
 
-            // Fetch the subtask to get its name
+            const assigner = req.payload.id;
+
+            // Fetch the subtask to get its name and previous status
             const subTask = await SubTaskModel.findById(value.subTaskId);
 
             if (!subTask) {
                 return res.status(200).json({ status: false, message: "Subtask not found" });
             }
 
-            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+            const previousStatus = subTask.status;
+            const subTaskName = subTask.task; // Assuming `task` holds the subtask name
 
-            const [subTaskStatusUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
-                [
-                    subTaskHelpers.updateSubTaskStatus(value),
-                    userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `The status of the ${subTaskName} has been changed to ${value.status}.` })
-                ]
-            )
+            // Update the status
+            const subTaskStatusUpdateResponse = await subTaskHelpers.updateSubTaskStatus(value);
+            
 
-            if (subTaskStatusUpdateResponse.modifiedCount && notificationResponse) {
-                return res.status(200).json({ status: true, notification: notificationResponse })
+            if (!subTaskStatusUpdateResponse.modifiedCount) {
+                return res.status(200).json({ status: false, message: "Error updating status" });
             }
-            return res.status(200).json({ status: false, message: "Error updating status" })
+
+            // Create a notification
+            const [userNotificationResponse, notificationResponse] = await Promise.all([
+                userHelpers.addNotificationCount(assigner),
+                notificationHelpers.addNotification({
+                    assigner,
+                    notification: `The status of the ${subTaskName} has been changed from ${previousStatus} to ${value.status}.`
+                })
+            ]);
+
+            // Store the update in the chat
+            await ChatModel.create({
+                roomId: value.subTaskId,
+                sender: assigner,
+                message: `Status changed.`,
+                typeOfChat: "status_update",
+                from: previousStatus,
+                to: value.status,
+                createdAt: new Date()
+            });
+
+
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+
+
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: subTaskNew
+            });
+            console.log('Emitting subTaskStatusUpdated event:', value.subTaskId, value.status); // Debug log
+
+
+
+            return res.status(200).json({ status: true, notification: notificationResponse });
         } catch (error) {
-            throw new Error(error.message);
+            return res.status(500).json({ status: false, message: error.message });
         }
-    }
+    };
+
 
     const updateSubTaskClient = async (req, res) => {
         try {
             const subTaskStatusSchema = Joi.object({
                 subTaskId: Joi.string().required(),
                 client: Joi.string().max(25).required()
-            })
-            const { error, value } = subTaskStatusSchema.validate(req.body)
+            });
+
+            const { error, value } = subTaskStatusSchema.validate(req.body);
 
             if (error) {
-                return res.status(200).json({ status: false, message: error.details[0].message })
+                return res.status(200).json({ status: false, message: error.details[0].message });
             }
-            const assigner = req.payload.id
 
+            const assigner = req.payload.id;
+
+            // Fetch the subtask
             const subTask = await SubTaskModel.findById(value.subTaskId);
 
             if (!subTask) {
                 return res.status(200).json({ status: false, message: "Subtask not found" });
             }
 
-            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+            const subTaskName = subTask.task; // Assuming the subtask has a `task` field
+            const previousClient = subTask.client || "Not Assigned"; // Handle case where there is no previous client
 
-            const [subTaskClientUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
-                [
-                    subTaskHelpers.updateSubTaskClient(value),
-                    userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `The client for the task ${subTaskName} has been changed to ${value.client}.` })
-                ]
-            )
+            // Perform updates concurrently
+            const [subTaskClientUpdateResponse, userNotificationResponse, notificationResponse, chatResponse] = await Promise.all([
+                subTaskHelpers.updateSubTaskClient(value),
+                userHelpers.addNotificationCount(assigner),
+                notificationHelpers.addNotification({
+                    assigner,
+                    notification: `The client for the task "${subTaskName}" has been changed from ${previousClient} to ${value.client}.`
+                }),
+                ChatModel.create({
+                    roomId: value.subTaskId,
+                    sender: assigner,
+                    message: `Client updated.`,
+                    typeOfChat: "client_update",
+                    from: previousClient !== "Not Assigned" ? previousClient : null,
+                    to: value.client,
+                    createdAt: new Date()
+                })
+            ]);
 
-            if (subTaskClientUpdateResponse.modifiedCount && notificationResponse) {
-                return res.status(200).json({ status: true, notification: notificationResponse })
+            if (subTaskClientUpdateResponse.modifiedCount && notificationResponse && chatResponse) {
+                return res.status(200).json({ status: true, notification: notificationResponse, chat: chatResponse });
             }
-            return res.status(200).json({ status: false, message: "Error updating client" })
+
+            return res.status(200).json({ status: false, message: "Error updating client" });
+
         } catch (error) {
-            throw new Error(error.message);
+            console.error("Error updating subtask client:", error);
+            return res.status(500).json({ status: false, message: "Internal Server Error" });
         }
-    }
+    };
+
 
     const updateSubTaskPriority = async (req, res) => {
         try {
             const subTaskPrioritySchema = Joi.object({
                 subTaskId: Joi.string().required(),
                 priority: Joi.required()
-            })
-            const { error, value } = subTaskPrioritySchema.validate(req.body)
+            });
+
+            const { error, value } = subTaskPrioritySchema.validate(req.body);
 
             if (error) {
-                return res.status(200).json({ status: false, message: error.details[0].message })
+                return res.status(200).json({ status: false, message: error.details[0].message });
             }
-            const assigner = req.payload.id
 
+            const assigner = req.payload.id;
+
+            // Fetch the subtask
             const subTask = await SubTaskModel.findById(value.subTaskId);
 
             if (!subTask) {
                 return res.status(200).json({ status: false, message: "Subtask not found" });
             }
 
-            const subTaskName = subTask.task; // Assuming the subtask has a `name` field
+            const subTaskName = subTask.task; // Assuming the subtask has a `task` field
+            const previousPriority = subTask.priority; // Get the previous priority before updating
 
+            // Perform updates concurrently
+            const [subTaskPriorityUpdateResponse, userNotificationResponse, notificationResponse, chatResponse] = await Promise.all([
+                subTaskHelpers.updateSubTaskPriority(value),
+                userHelpers.addNotificationCount(assigner),
+                notificationHelpers.addNotification({
+                    assigner,
+                    notification: `The priority of the task "${subTaskName}" has been updated from ${previousPriority} to ${value.priority}.`
+                }),
+                ChatModel.create({
+                    roomId: value.subTaskId,
+                    sender: assigner,
+                    message: `Priority updated.`,
+                    typeOfChat: "priority_update",
+                    from: previousPriority,
+                    to: value.priority,
+                    createdAt: new Date()
+                })
+            ]);
 
-
-
-            const [subTaskPriorityUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
-                [
-                    subTaskHelpers.updateSubTaskPriority(value),
-                    userHelpers.addNotificationCount(assigner),
-                    notificationHelpers.addNotification({ assigner, notification: `The priority of the task ${subTaskName} has been updated to ${value.priority}.` })
-                ]
-            )
-
-            if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse) {
-                return res.status(200).json({ status: true, notification: notificationResponse })
+            if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse && chatResponse) {
+                return res.status(200).json({ status: true, notification: notificationResponse, chat: chatResponse });
             }
-            return res.status(200).json({ status: false, message: "Error updating priority" })
+
+            return res.status(200).json({ status: false, message: "Error updating priority" });
+
         } catch (error) {
-            throw new Error(error.message);
+            console.error("Error updating subtask priority:", error);
+            return res.status(500).json({ status: false, message: "Internal Server Error" });
         }
-    }
+    };
+
 
     const updateDueDate = async (req, res) => {
         try {

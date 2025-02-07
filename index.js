@@ -29,6 +29,8 @@ const io = new Server(server, {
     }
 })
 
+app.set("socketio", io);
+
 // Socket.io connection
 socketConfig(io)
 
