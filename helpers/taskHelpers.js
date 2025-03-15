@@ -14,7 +14,7 @@ const taskHelpers = {
     const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
 
 
-
+      
     const todayTasks = await SubTaskModel.find({
       dueDate: endOfDayUTC.toISOString(),
       isActive: true

@@ -66,6 +66,9 @@ const socketConfig = (io) => {
     socket.on("statusPriorityHeader-updation", (data) => {
       socket.broadcast.emit("statusPriorityHeader-updated", data)
     })
+    socket.on("attendance-updation", (data) => {
+      socket.broadcast.emit("attendance-updated", data)
+    })
 
 
     socket.on('disconnect', () => {

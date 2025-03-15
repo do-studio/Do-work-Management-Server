@@ -5,6 +5,7 @@ import headerHelpers from "../helpers/headerHelpers.js"
 import userHelpers from "../helpers/userHelpers.js"
 import notificationHelpers from "../helpers/notificationHelpers.js"
 import { SubTaskModel } from "../models/subTasks.js"
+import TaskModel from "../models/tasks.js"
 import ChatModel from "../models/chats.js"
 
 
@@ -163,12 +164,22 @@ const subTaskControllers = () => {
                 return res.status(200).json({ status: false, message: "Subtask not found" });
             }
 
+
+            const taskId = subTask.taskId; // Get the taskId from the subtask
+
+            // Fetch the task to get the projectId
+            const task = await TaskModel.findById(taskId);
+
+            if (!task) {
+                return res.status(200).json({ status: false, message: "Parent task not found" });
+            }
+
             const previousStatus = subTask.status;
             const subTaskName = subTask.task; // Assuming `task` holds the subtask name
 
             // Update the status
             const subTaskStatusUpdateResponse = await subTaskHelpers.updateSubTaskStatus(value);
-            
+
 
             if (!subTaskStatusUpdateResponse.modifiedCount) {
                 return res.status(200).json({ status: false, message: "Error updating status" });
@@ -206,7 +217,9 @@ const subTaskControllers = () => {
 
 
 
-            return res.status(200).json({ status: true, notification: notificationResponse });
+            return res.status(200).json({
+                status: true, notification: notificationResponse, projectId: task.projectId // Include the projectId in the response
+            });
         } catch (error) {
             return res.status(500).json({ status: false, message: error.message });
         }
@@ -270,6 +283,65 @@ const subTaskControllers = () => {
     };
 
 
+    // const updateSubTaskPriority = async (req, res) => {
+    //     try {
+    //         const subTaskPrioritySchema = Joi.object({
+    //             subTaskId: Joi.string().required(),
+    //             priority: Joi.required()
+    //         });
+
+    //         const { error, value } = subTaskPrioritySchema.validate(req.body);
+
+    //         if (error) {
+    //             return res.status(200).json({ status: false, message: error.details[0].message });
+    //         }
+
+    //         const assigner = req.payload.id;
+
+    //         // Fetch the subtask
+    //         const subTask = await SubTaskModel.findById(value.subTaskId);
+
+    //         if (!subTask) {
+    //             return res.status(200).json({ status: false, message: "Subtask not found" });
+    //         }
+
+    //         const subTaskName = subTask.task; // Assuming the subtask has a `task` field
+    //         const previousPriority = subTask.priority; // Get the previous priority before updating
+
+    //         // Perform updates concurrently
+    //         const [subTaskPriorityUpdateResponse, userNotificationResponse, notificationResponse, chatResponse] = await Promise.all([
+    //             subTaskHelpers.updateSubTaskPriority(value),
+    //             userHelpers.addNotificationCount(assigner),
+    //             notificationHelpers.addNotification({
+    //                 assigner,
+    //                 notification: `The priority of the task "${subTaskName}" has been updated from ${previousPriority} to ${value.priority}.`
+    //             }),
+    //             ChatModel.create({
+    //                 roomId: value.subTaskId,
+    //                 sender: assigner,
+    //                 message: `Priority updated.`,
+    //                 typeOfChat: "priority_update",
+    //                 from: previousPriority,
+    //                 to: value.priority,
+    //                 createdAt: new Date()
+    //             })
+    //         ]);
+
+    //         if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse && chatResponse) {
+    //             return res.status(200).json({ status: true, notification: notificationResponse, chat: chatResponse });
+    //         }
+
+    //         return res.status(200).json({ status: false, message: "Error updating priority" });
+
+    //     } catch (error) {
+    //         console.error("Error updating subtask priority:", error);
+    //         return res.status(500).json({ status: false, message: "Internal Server Error" });
+    //     }
+    // };
+
+
+
+
     const updateSubTaskPriority = async (req, res) => {
         try {
             const subTaskPrioritySchema = Joi.object({
@@ -294,6 +366,16 @@ const subTaskControllers = () => {
 
             const subTaskName = subTask.task; // Assuming the subtask has a `task` field
             const previousPriority = subTask.priority; // Get the previous priority before updating
+            const taskId = subTask.taskId; // Get the taskId from the subtask
+
+            // Fetch the task to get the projectId
+            const task = await TaskModel.findById(taskId);
+
+            if (!task) {
+                return res.status(200).json({ status: false, message: "Parent task not found" });
+            }
+
+            // const projectId = task.projectId; // Get the projectId from the task
 
             // Perform updates concurrently
             const [subTaskPriorityUpdateResponse, userNotificationResponse, notificationResponse, chatResponse] = await Promise.all([
@@ -315,7 +397,12 @@ const subTaskControllers = () => {
             ]);
 
             if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse && chatResponse) {
-                return res.status(200).json({ status: true, notification: notificationResponse, chat: chatResponse });
+                return res.status(200).json({
+                    status: true,
+                    notification: notificationResponse,
+                    chat: chatResponse,
+                    projectId: task.projectId // Include the projectId in the response
+                });
             }
 
             return res.status(200).json({ status: false, message: "Error updating priority" });
@@ -325,6 +412,7 @@ const subTaskControllers = () => {
             return res.status(500).json({ status: false, message: "Internal Server Error" });
         }
     };
+
 
 
     const updateDueDate = async (req, res) => {
