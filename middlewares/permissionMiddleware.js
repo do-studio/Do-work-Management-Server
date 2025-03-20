@@ -17,6 +17,7 @@ const permissionMiddleware = (permissionType="")=>{
         if(role ==  configKeys.JWT_USER_ROLE){
             try {
                 const permissionAccess = await userHelpers.getUserPermissions(id)
+                // console.log("Permission access",permissionAccess.permissions)
                 if(permissionAccess?.permissions?.length){
                     const projectPermission = permissionAccess.permissions.find((project)=>project.projectId === projectId)
                     if(permissionType === "dynamic"){

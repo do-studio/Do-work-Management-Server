@@ -344,6 +344,7 @@ const subTaskControllers = () => {
 
     const updateSubTaskPriority = async (req, res) => {
         try {
+
             const subTaskPrioritySchema = Joi.object({
                 subTaskId: Joi.string().required(),
                 priority: Joi.required()
