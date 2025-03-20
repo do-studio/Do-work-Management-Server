@@ -282,7 +282,7 @@ const punchInControllers = () => {
         try {
             // Get today's date range
             const { date } = req.body
-
+            console.log(date)
             const parsedDate = new Date(date);
 
 
@@ -297,7 +297,7 @@ const punchInControllers = () => {
             // Get all users
 
             const year = parsedDate.getUTCFullYear();
-            const month = String(parsedDate.getUTCMonth() + 1).padStart(2, '0'); // Months are 0-based, so add 1
+            const month = String(parsedDate.getUTCMonth()+1).padStart(2, '0'); // Months are 0-based, so add 1
             const day = String(parsedDate.getUTCDate()).padStart(2, '0'); // Pad 
 
 
