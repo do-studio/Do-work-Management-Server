@@ -7,7 +7,6 @@ const ReminderSchema = new mongoose.Schema(
         date: { type: Date, required: true }, // Reminder date
         priority: { type: String, enum: ['low', 'medium', 'high'], required: true }, // Priority of the reminder
         status: { type: String, enum: ['ending', 'completed','pending'], default: 'pending' }, // Status of the reminder
-        month: { type: mongoose.Schema.Types.ObjectId, ref: 'Month', required: true } // Reference to Month
     },
     { timestamps: true } // Automatic createdAt and updatedAt fields
 );

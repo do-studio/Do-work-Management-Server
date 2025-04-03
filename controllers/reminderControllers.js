@@ -33,20 +33,15 @@ const ReminderControllers = () => {
 
     const createReminder = async (req, res) => {
         try {
-            const { monthId } = req.params; // Get month by ID
             const { name, date, priority, status } = req.body;
 
-            const month = await Month.findById(monthId);
-            if (!month) {
-                return res.status(404).json({ message: 'Month not found.' });
-            }
 
+            console.log("Date", date)
             const newReminder = new Reminder({
                 name,
                 date,
                 priority,
                 status,
-                month: monthId
             });
 
             await newReminder.save();
@@ -60,8 +55,7 @@ const ReminderControllers = () => {
     // Get reminders for a specific month
     const getRemindersByMonth = async (req, res) => {
         try {
-            const { monthId } = req.params;
-            const reminders = await Reminder.find({ month: monthId });
+            const reminders = await Reminder.find();
 
             if (reminders.length === 0) {
                 return res.status(404).json({ message: 'No reminders found for this month.' });
