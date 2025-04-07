@@ -58,7 +58,7 @@ const ReminderControllers = () => {
             const reminders = await Reminder.find();
 
             if (reminders.length === 0) {
-                return res.status(404).json({ message: 'No reminders found for this month.' });
+                return res.status(404).json({ message: 'No reminders found.' });
             }
 
             res.status(200).json(reminders);
