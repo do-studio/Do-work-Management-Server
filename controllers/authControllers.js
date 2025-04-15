@@ -16,7 +16,7 @@ const authControllers = () => {
             const userSchema = Joi.object({
                 userName: Joi.string().min(2).max(20).required(),
                 email: Joi.string().email({ tlds: { allow: false } }).required(),
-                password: Joi.string().min(6).max(20).required()
+                password: Joi.string().min(6).required()
             })
             const { error, value } = userSchema.validate(req.body)
 

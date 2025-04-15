@@ -26,7 +26,8 @@ const taskHelpers = {
 
     const tasks = await SubTaskModel.find({
       dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
-      status: { $ne: "done" },
+      // status: { $ne: "done" },
+      status: { $nin: ["done", "posted"] }, // Not equal to "done" and "posted"
       isActive: true
     }).sort({ dueDate: 1 });;
 
