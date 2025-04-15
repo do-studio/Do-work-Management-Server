@@ -217,8 +217,6 @@ const taskControllers = () => {
     const getProjectByPeople = async (req, res) => {
         try {
             const { id } = req.payload;
-            console.log("Requested user id", id);
-
 
             // Pass projectId, userId, and today as the due date to the helper function
             const projectResponse = await taskHelpers.getProjectByPeople();

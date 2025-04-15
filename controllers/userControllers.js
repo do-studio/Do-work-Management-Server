@@ -7,10 +7,14 @@ const userControllers = () => {
     const getSingleUser = async (req,res)=>{
         try {
             const {id} = req.params;
+            console.log("id",id)
             const response = await userHelpers.getUserData(id)
+            console.log(response)
             if(response){
                 return res.status(200).json({status:true,data:response})
             }
+
+
         } catch (error) {
             throw new Error(error.message);
         }

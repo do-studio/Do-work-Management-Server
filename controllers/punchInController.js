@@ -14,8 +14,6 @@ const punchInControllers = () => {
             const userId = req.payload.id
             const { latitude, longitude } = req.body;
 
-            console.log(latitude, longitude);
-
             const companyLocation = { latitude: process.env.COMPANY_LOCATION_LATITUDE, longitude: process.env.COMPANY_LOCATION_LONGITUDE };
 
             const today = new Date().toISOString().slice(0, 10); // Get the current date in YYYY-MM-DD format
@@ -101,7 +99,6 @@ const punchInControllers = () => {
                     $lte: new Date(today + 'T23:59:59.999Z')
                 }
             });
-            console.log(todayPunchRecord);
 
 
             if (!todayPunchRecord) {
