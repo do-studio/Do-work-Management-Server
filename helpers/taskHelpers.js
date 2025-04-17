@@ -441,7 +441,8 @@ const taskHelpers = {
                 // Filter by dueDate range
                 // dueDate: endOfDayUTC.toISOString(),
                 dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
-                status: { $ne: "done" },
+                // status: { $ne: "done" },
+                status: { $nin: ["done", "posted"] },
               },
             },
             {
