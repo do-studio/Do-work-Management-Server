@@ -95,6 +95,16 @@ const subTaskControllers = () => {
                 ]
             )
 
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: subTaskNew,
+                type: "name"
+            });
+            console.log('Emitting subTaskStatusUpdated event:', subTaskNew); // Debug log
+
+
             if (subTaskNameUpdateResponse.modifiedCount && notificationResponse) {
                 return res.status(200).json({ status: true, notification: notificationResponse })
             }
@@ -211,9 +221,10 @@ const subTaskControllers = () => {
 
             // Emit a socket event to update all connected clients
             req.app.get("socketio").emit("subtaskUpdated", {
-                subtask: subTaskNew
+                subtask: subTaskNew,
+                type: "status"
             });
-            console.log('Emitting subTaskStatusUpdated event:', value.subTaskId, value.status); // Debug log
+            console.log('Emitting subTaskUpdated event:', value.subTaskId, value.status); // Debug log
 
 
 
@@ -269,6 +280,16 @@ const subTaskControllers = () => {
                     createdAt: new Date()
                 })
             ]);
+
+
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: subTaskNew,
+                type: "client"
+            });
+            console.log('Emitting subTaskStatusUpdated event:', subTaskNew); // Debug log
 
             if (subTaskClientUpdateResponse.modifiedCount && notificationResponse && chatResponse) {
                 return res.status(200).json({ status: true, notification: notificationResponse, chat: chatResponse });
@@ -397,6 +418,18 @@ const subTaskControllers = () => {
                 })
             ]);
 
+
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: subTaskNew,
+                type: "priority"
+            });
+            console.log('Emitting subTaskStatusUpdated event:', subTaskNew); // Debug log
+
+
+
             if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse && chatResponse) {
                 return res.status(200).json({
                     status: true,
@@ -449,6 +482,9 @@ const subTaskControllers = () => {
                 });
             };
 
+          
+
+
             const [subTaskDateUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
                 [
                     subTaskHelpers.updateDueDate(value),
@@ -456,6 +492,16 @@ const subTaskControllers = () => {
                     notificationHelpers.addNotification({ assigner, notification: `The due date for the task ${subTaskName} has been updated to ${formatDueDate(value.dueDate)}.` })
                 ]
             )
+
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: subTaskNew,
+                type: "dueDate"
+            });
+            console.log('Emitting subTaskStatusUpdated event:', subTaskNew); // Debug log
+
 
             if (subTaskDateUpdateResponse.modifiedCount && notificationResponse) {
                 return res.status(200).json({ status: true, notification: notificationResponse })
@@ -518,7 +564,17 @@ const subTaskControllers = () => {
                     userHelpers.addNotificationCount(assigner),
                     notificationHelpers.addNotification({ assigner, notification: `${isAdded ? "assigned task to" : "removed task from"} ${assignee}` })
                 ]
-            )
+            )   
+
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: subTaskNew,
+                type: 'assign'
+            });
+            console.log('Emitting subTaskUpdated event:', subTaskNew); // Debug log
+
 
             if (assignResponse.modifiedCount && notificationResponse) {
                 return res.status(200).json({ status: true, notification: notificationResponse })
@@ -551,6 +607,15 @@ const subTaskControllers = () => {
             if (removeStatus) {
                 return res.status(200).json({ status: true, message: `${value.length > 1 ? "Sub tasks" : "Sub task"} removed`, notification: subTaskRemoveResponse[subTaskRemoveResponse.length - 1] })
             }
+
+
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtaskId: value.subTaskId, type: "remove"
+            });
+            console.log('Emitting subTaskDeleteUpdated event:', value.subTaskId); // Debug log
+
+
             return res.status(200).json({ status: false, message: `Error removing ${value.length > 1 ? "sub tasks" : "sub task"}` })
         } catch (error) {
             throw new Error(error.message);
