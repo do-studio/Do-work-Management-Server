@@ -602,19 +602,21 @@ const subTaskControllers = () => {
 
             queryArray.push(userHelpers.addNotificationCount(assigner), notificationHelpers.addNotification({ assigner, notification: `removed a subtask` }))
 
+            
             const subTaskRemoveResponse = await Promise.all(queryArray)
             const removeStatus = subTaskRemoveResponse.every(response => response)
+            // Emit a socket event to update all connected clients
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: {_id:value[0]}, type: "remove"
+            });
+            console.log('Emitting subTaskDeleteUpdated event:', value); // Debug log
             if (removeStatus) {
+                
                 return res.status(200).json({ status: true, message: `${value.length > 1 ? "Sub tasks" : "Sub task"} removed`, notification: subTaskRemoveResponse[subTaskRemoveResponse.length - 1] })
             }
 
 
-            // Emit a socket event to update all connected clients
-            req.app.get("socketio").emit("subtaskUpdated", {
-                subtaskId: value.subTaskId, type: "remove"
-            });
-            console.log('Emitting subTaskDeleteUpdated event:', value.subTaskId); // Debug log
-
+           
 
             return res.status(200).json({ status: false, message: `Error removing ${value.length > 1 ? "sub tasks" : "sub task"}` })
         } catch (error) {
