@@ -64,6 +64,7 @@ const projectControllers = () => {
                                         $and: [
                                             { $in: ["$taskId", "$$taskIds"] },
                                             { $eq: ["$isActive", true] }, // Include only active subtasks
+                                            { $ne: ["$status", "posted"] }, // Exclude subtasks with status "posted"
                                             { $ne: ["$status", "done"] }, // Exclude subtasks with status "done"
                                         ],
                                     },

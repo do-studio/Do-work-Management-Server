@@ -370,7 +370,8 @@ const taskHelpers = {
                   $sortArray: {
                     input: "$$filteredSubTasks",
                     sortBy: {
-                      order: 1
+                      client: 1,
+                      task: 1,
                     }
                   }
                 }
