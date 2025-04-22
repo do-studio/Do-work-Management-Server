@@ -24,10 +24,7 @@ const subTaskControllers = () => {
             }
             const { taskId, taskName } = value
 
-            const subTaskNameExists = await subTaskHelpers.findSubTaskByName(taskName)
-            if (subTaskNameExists) {
-                return res.status(200).json({ status: false, message: "Sub-task name already exists" })
-            }
+            
             const assigner = req.payload.id
 
 
