@@ -65,6 +65,7 @@ const taskControllers = () => {
             }
             return res.status(200).json({ status: false, message: "No projects found" })
         } catch (error) {
+            console.error("Error in getSingleProject:", error);
             return res.status(500).json({ status: false, message: "Internal error" })
         }
     }
