@@ -2,9 +2,9 @@ import { model, Schema } from "mongoose";
 import { getNextSequence } from "../utils/getNextSequence.js";
 
 
-const SubTaskSchema = new Schema (
+const SubTaskSchema = new Schema(
     {
-        taskId:{
+        taskId: {
             type: Schema.Types.ObjectId,
             ref: 'tasks',
             required: true
@@ -12,37 +12,37 @@ const SubTaskSchema = new Schema (
         task: {
             type: String
         },
-        isActive:{
+        isActive: {
             type: Boolean,
             default: true
         },
-        status:{
+        status: {
             type: String,
             default: "not started"
         },
-        dueDate:{
+        dueDate: {
             type: String
         },
-        priority:{
+        priority: {
             type: String,
             default: "normal"
         },
-        notes:{
+        notes: {
             type: String
         },
-        people:{
+        people: {
             type: [Schema.Types.ObjectId],
             ref: 'users',
-            default:[]
+            default: []
         },
-        order:{
+        order: {
             type: Number,
             default: 0
         }
     },
     {
         timestamps: true,
-        strict: false 
+        strict: false
     }
 )
 
@@ -53,10 +53,11 @@ SubTaskSchema.pre('save', async function (next) {
 
 let SubTaskModel = model('subtasks', SubTaskSchema);
 
-export const addFieldToSchema = async(field) => {
+export const addFieldToSchema = async (field) => {
     SubTaskSchema.add({ [field]: { type: Schema.Types.Mixed } });
     SubTaskModel = model('subtasks', SubTaskSchema);
     return true
 }
 
-export {SubTaskModel}
+export { SubTaskModel }
+

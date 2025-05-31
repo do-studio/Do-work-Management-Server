@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import path, { dirname } from 'path'
 import socketConfig from './routes/socketRoute.js';
 import configKeys from './config/configKeys.js';
+import BillingModel from './models/billing.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,16 @@ expressConfig(app)
 
 // Routes Configurations
 routes(app)
+
+
+app.post('/bulk', async (req, res) => {
+   try {
+    await BillingModel.deleteMany({});
+    res.status(200).json({ message: 'All billing records deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting records', error });
+  }
+});
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));

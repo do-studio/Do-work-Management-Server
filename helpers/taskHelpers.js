@@ -14,7 +14,7 @@ const taskHelpers = {
     const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
 
 
-      
+
     const todayTasks = await SubTaskModel.find({
       dueDate: endOfDayUTC.toISOString(),
       isActive: true
@@ -22,6 +22,40 @@ const taskHelpers = {
 
 
 
+    // 🟢 Aggregation for today's tasks
+    const todayTasks1 = await SubTaskModel.aggregate([
+      {
+        $match: {
+          dueDate: endOfDayUTC.toISOString(),
+          isActive: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'chats',
+          localField: '_id',
+          foreignField: 'roomId',
+          as: 'chats'
+        }
+      },
+      {
+        $addFields: {
+          people: { $map: { input: "$people", as: "person", in: { $toObjectId: "$$person" } } }
+        }
+      },
+      {
+        $sort: { dueDate: 1 }
+      }
+    ]);
+
+
+
+
+
+
+
+    // console.log("todayTasks1 chats", todayTasks1[0]);
+    // console.log("todayTasks", todayTasks);
     // Query for documents where dueDate is between the start and end of the day
 
     const tasks = await SubTaskModel.find({
@@ -31,17 +65,18 @@ const taskHelpers = {
       isActive: true
     }).sort({ dueDate: 1 });;
 
+    // return todayTasks1
 
-    console.log("end of the day", endOfDayUTC);
-    console.log("start of the Month", startOfPreviousMonthUTC);
-    console.log("oneDayBeforeUTC", oneDayBeforeUTC);
+    console.log("Todays task agregate length", todayTasks1[5])
+    console.log("Todays task find length", todayTasks[5])
+
+
 
     const combinedTasks = [...todayTasks, ...tasks];
 
-
-
     return combinedTasks
   },
+
   getProjectByClient: async () => {
     const today = new Date();
     const startOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 0, 18, 30, 0, 0));

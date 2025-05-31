@@ -74,7 +74,6 @@ const taskControllers = () => {
         try {
             const { projectId } = req.params;
             const { id } = req.payload;
-            console.log("Requested user id", id);
 
             const projectResponse = await taskHelpers.getSingleProjectIndividual(projectId, id);
 
@@ -219,23 +218,15 @@ const taskControllers = () => {
 
             // Pass projectId, userId, and today as the due date to the helper function
             const projectResponse = await taskHelpers.getProjectByPeople();
-            // return res.status(200).json(projectResponse)
 
-
+            // console.log(projectResponse[0])
+            // return res.status(200).json({ data: projectResponse, length: projectResponse.length })
 
             // return res.status(200).json(projectResponse);
             const people = await UserModel.find({ role: configKeys.JWT_USER_ROLE, isActive: true }, { _id: 1 }).sort({ isActive: 1 });
 
-
-
-
             // Convert to an array of _id values
             const peopleIds = people.map(person => person._id);
-
-
-
-
-
 
             const result = [];
             const noUserTasks = [];
@@ -244,6 +235,7 @@ const taskControllers = () => {
                 const filteredTasks = projectResponse.filter(item => item.people.includes(personId));
                 result.push({ personId, tasks: filteredTasks });
             }
+
 
             const filteredNoUserTasks = projectResponse.filter(item => item.people.length === 0)
 
@@ -255,7 +247,7 @@ const taskControllers = () => {
 
 
             if (projectResponse.length) {
-                return res.status(200).json({ status: true, data: { result, filteredNoUserTasks: noUserTasks } });
+                return res.status(200).json({ status: true, data: { result, filteredNoUserTasks: noUserTasks }, Assignedlength: result.length, NoUserLength: noUserTasks[0].length });
             }
             return res.status(200).json({ status: false, message: "No tasks found for this user in the project with today's due date" });
         } catch (error) {
@@ -263,7 +255,7 @@ const taskControllers = () => {
             return res.status(500).json({ status: false, message: "Internal error" });
         }
     };
-    
+
 
 
 
