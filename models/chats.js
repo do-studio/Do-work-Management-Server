@@ -43,3 +43,5 @@ const ChatSchema = new Schema(
 
 const ChatModel = model('chats', ChatSchema);
 export default ChatModel;
+
+

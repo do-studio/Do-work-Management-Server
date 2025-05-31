@@ -13,6 +13,7 @@ import priorityRoutes from './priorityRoutes.js';
 import clientRoutes from './clientRoutes.js';
 import attendanceRoute from './attendanceRoute.js';
 import reminderRoutes from './reminderRoutes.js'; // Import reminder routes
+import billingRoutes from './billingRoutes.js';
 
 
 
@@ -32,6 +33,7 @@ const routes = (app)=>{
     app.use('/api/client',authMiddleware,clientRoutes());
     app.use('/api/attendance',authMiddleware,attendanceRoute());
     app.use('/api/reminders', authMiddleware, reminderRoutes()); // Use reminder routes
+    app.use('/api/billings',authMiddleware, billingRoutes()); // Use billing routes 
 
 }
 
