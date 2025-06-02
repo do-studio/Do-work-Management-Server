@@ -8,6 +8,8 @@ const billingRoutes = () => {
     // Get all payment records
     router.get('/', billingControllers.getBillings);
 
+    
+
     // // Create a new payment record
     router.post('/', billingControllers.createBilling);
 

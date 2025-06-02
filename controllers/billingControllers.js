@@ -6,18 +6,37 @@ const getBillings = async (req, res) => {
         const { page = 1, limit = 10, type } = req.query;
         const skip = (page - 1) * limit;
 
+        const now = new Date();
+        const oneMonthLater = new Date();
+        oneMonthLater.setMonth(now.getMonth() + 1);
+
         const query = {};
         if (type) query.type = type;
 
+        const query2 = {
+            isActive: true,
+            $or: [
+                { expiryDate: { $lte: oneMonthLater, $gte: now } }, // expiring within a month
+                { expiryDate: { $lt: now } } // already expired
+            ]
+        };
+
+        const [records2] = await Promise.all([
+            BillingModel.find(query2)
+                .sort({ expiryDate: 1 }) // Soonest expiry first
+
+        ]);
+
         const [records, total] = await Promise.all([
             BillingModel.find(query)
-                .sort({ expiryDate: 1 })
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit)),
             BillingModel.countDocuments(query)
         ]);
 
         res.json({
+            expiringSoon: records2,
             data: records,
             pagination: {
                 total,
@@ -34,6 +53,8 @@ const getBillings = async (req, res) => {
 const createBilling = async (req, res) => {
     try {
         const { name, type, link, amount, createdDate, expiryDate, notes } = req.body;
+
+        console.log("Creating billing record:", req.body);
 
         // Check if billing with the same name already exists
         const existingBilling = await BillingModel.findOne({ name });
@@ -72,8 +93,9 @@ const getBilling = async (req, res) => {
 
 const updateBilling = async (req, res) => {
     try {
-        const { name, type, link, amount, createdDate, expiryDate, notes } = req.body;
+        const { name, type, link, amount, createdDate, expiryDate, notes, isActive } = req.body;
 
+        console.log("Updating billing record:", req.body);
         const updatedRecord = await BillingModel.findByIdAndUpdate(
             req.params.id,
             {
@@ -84,6 +106,7 @@ const updateBilling = async (req, res) => {
                 createdDate,
                 expiryDate,
                 notes,
+                isActive
             },
             { new: true }
         );
