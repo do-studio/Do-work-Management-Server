@@ -36,6 +36,7 @@ app.set("socketio", io);
 socketConfig(io)
 
 // Middleware 
+app.use(express.json()); // Add this to parse JSON bodies
 expressConfig(app)
 
 // Error Handling Middleware
@@ -47,10 +48,15 @@ routes(app)
 
 app.post('/bulk', async (req, res) => {
    try {
-    await BillingModel.deleteMany({});
-    res.status(200).json({ message: 'All billing records deleted successfully.' });
-  } catch (error) {
-    res.status(500).json({ message: 'Error deleting records', error });
+    const items = req.body; // Expecting an array of items
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ message: 'Items should be an array' });
+    }
+
+    const result = await BillingModel.insertMany(items);
+    res.status(201).json({ message: 'Items added successfully', data: result });
+  } catch (err) {
+    res.status(500).json({ message: 'Error adding items', error: err.message });
   }
 });
 
