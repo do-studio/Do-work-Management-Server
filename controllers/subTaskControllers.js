@@ -397,22 +397,14 @@ const subTaskControllers = () => {
             // const projectId = task.projectId; // Get the projectId from the task
 
             // Perform updates concurrently
-            const [subTaskPriorityUpdateResponse, userNotificationResponse, notificationResponse, chatResponse] = await Promise.all([
+            const [subTaskPriorityUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all([
                 subTaskHelpers.updateSubTaskPriority(value),
                 userHelpers.addNotificationCount(assigner),
                 notificationHelpers.addNotification({
                     assigner,
                     notification: `The priority of the task "${subTaskName}" has been updated from ${previousPriority} to ${value.priority}.`
                 }),
-                ChatModel.create({
-                    roomId: value.subTaskId,
-                    sender: assigner,
-                    message: `Priority updated.`,
-                    typeOfChat: "priority_update",
-                    from: previousPriority,
-                    to: value.priority,
-                    createdAt: new Date()
-                })
+                
             ]);
 
 
@@ -427,11 +419,10 @@ const subTaskControllers = () => {
 
 
 
-            if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse && chatResponse) {
+            if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse ) {
                 return res.status(200).json({
                     status: true,
                     notification: notificationResponse,
-                    chat: chatResponse,
                     projectId: task.projectId // Include the projectId in the response
                 });
             }
