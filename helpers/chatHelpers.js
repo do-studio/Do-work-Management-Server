@@ -60,9 +60,7 @@ const chatHelpers = {
         {
           $skip: skip
         },
-        {
-          $limit: 20
-        },
+        
         {
           $sort: {
             createdAt: 1
