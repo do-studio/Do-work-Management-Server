@@ -8,7 +8,7 @@ const taskRoutes = ()=>{
     
     router.post('/addTask',controllers.addTask)
     router.get('/getSingleProject/:projectId',controllers.getSingleProject)
-    router.get('/getProjectByPeople',controllers.getProjectByPeople)
+    router.get('/getProjectByPeople/:date',controllers.getProjectByPeople)
     router.get('/getProjectByClient',controllers.getProjectByClient)
     router.get('/getSingleProjectIndivitual',controllers.getSingleProjectIndividual)
     router.put('/removeTask/:projectId',permissionMiddleware("remove"),controllers.removeTask)

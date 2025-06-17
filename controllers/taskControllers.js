@@ -60,6 +60,18 @@ const taskControllers = () => {
             const { id } = req.payload
 
             const projectResponse = await taskHelpers.getSingleProject(projectId, id)
+
+            // console.log("Project Response:", projectResponse);
+
+            // projectResponse.forEach(project => {
+            //     // Ensure subTasks is an array
+            //     if (!Array.isArray(project.subTasks)) {
+            //         project.subTasks = [];
+            //     }
+            //     console.log("Project SubTasks:", project.subTasks);
+            // })
+
+
             if (projectResponse.length) {
                 return res.status(200).json({ status: true, data: projectResponse })
             }
@@ -214,10 +226,26 @@ const taskControllers = () => {
 
     const getProjectByPeople = async (req, res) => {
         try {
-            const { id } = req.payload;
+            const date = req.params.date;
+            console.log("date", date)
 
             // Pass projectId, userId, and today as the due date to the helper function
-            const projectResponse = await taskHelpers.getProjectByPeople();
+            const { todayTasks, prevTasks } = await taskHelpers.getProjectByPeople();
+            let projectResponse = [];
+
+
+            if (!date || date === undefined) {
+                projectResponse = [...todayTasks, ...prevTasks];
+            }
+
+            if (date === "today") {
+                projectResponse = [...todayTasks];
+            } else if (date === "prev") {
+                projectResponse = [...prevTasks];
+            } else if (date === "all") {
+                projectResponse = [...todayTasks, ...prevTasks];
+            }
+
 
             // console.log(projectResponse[0])
             // return res.status(200).json({ data: projectResponse, length: projectResponse.length })

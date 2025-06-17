@@ -1,7 +1,6 @@
 import Joi from 'joi'
 import chatHelpers from '../helpers/chatHelpers.js'
 import unreadChatHelpers from '../helpers/unreadChatHelpers.js'
-import ChatModel from '../models/chats.js'
 
 
 const chatControllers = () => {
@@ -10,8 +9,6 @@ const chatControllers = () => {
             const { roomId, skip } = req.params
             const response = await chatHelpers.getChatMessages(roomId, Number(skip))
             
-           
-
             if (response.length) {
                 return res.status(200).json({ status: true, data: response })
             }
