@@ -58,7 +58,7 @@ const taskHelpers = {
     // console.log("todayTasks", todayTasks);
     // Query for documents where dueDate is between the start and end of the day
 
-    const tasks = await SubTaskModel.find({
+    const prevTasks = await SubTaskModel.find({
       dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
       // status: { $ne: "done" },
       status: { $nin: ["done", "posted"] }, // Not equal to "done" and "posted"
@@ -67,14 +67,13 @@ const taskHelpers = {
 
     // return todayTasks1
 
-    console.log("Todays task agregate length", todayTasks1[5])
-    console.log("Todays task find length", todayTasks[5])
 
 
 
-    const combinedTasks = [...todayTasks, ...tasks];
 
-    return combinedTasks
+    const combinedTasks = [...todayTasks, ...prevTasks];
+
+    return { todayTasks, prevTasks }
   },
 
   getProjectByClient: async () => {
