@@ -230,7 +230,7 @@ const taskControllers = () => {
             console.log("date", date)
 
             // Pass projectId, userId, and today as the due date to the helper function
-            const { todayTasks, prevTasks } = await taskHelpers.getProjectByPeople();
+            const { todayTasks, prevTasks, nextDayTasks } = await taskHelpers.getProjectByPeople();
             let projectResponse = [];
 
 
@@ -242,8 +242,10 @@ const taskControllers = () => {
                 projectResponse = [...todayTasks];
             } else if (date === "prev") {
                 projectResponse = [...prevTasks];
+            } else if (date === "tomorrow") {
+                projectResponse = [...nextDayTasks]
             } else if (date === "all") {
-                projectResponse = [...todayTasks, ...prevTasks];
+                projectResponse = [...todayTasks, ...prevTasks, ...nextDayTasks];
             }
 
 

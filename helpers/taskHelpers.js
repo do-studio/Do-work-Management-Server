@@ -14,6 +14,18 @@ const taskHelpers = {
     const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
 
 
+    // Define the start and end of the next day in UTC
+    const nextDayStartUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() + 0, 0, 0, 0, 0));
+    const nextDayEndUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() + 0, 23, 59, 59, 999));
+
+    // Find tasks where dueDate is between start and end of the next day
+    const nextDayTasks = await SubTaskModel.find({
+      dueDate: {
+        $gte: nextDayStartUTC.toISOString(),
+        $lte: nextDayEndUTC.toISOString()
+      },
+      isActive: true
+    }).sort({ dueDate: 1 });
 
     const todayTasks = await SubTaskModel.find({
       dueDate: endOfDayUTC.toISOString(),
@@ -23,30 +35,30 @@ const taskHelpers = {
 
 
     // 🟢 Aggregation for today's tasks
-    const todayTasks1 = await SubTaskModel.aggregate([
-      {
-        $match: {
-          dueDate: endOfDayUTC.toISOString(),
-          isActive: true
-        }
-      },
-      {
-        $lookup: {
-          from: 'chats',
-          localField: '_id',
-          foreignField: 'roomId',
-          as: 'chats'
-        }
-      },
-      {
-        $addFields: {
-          people: { $map: { input: "$people", as: "person", in: { $toObjectId: "$$person" } } }
-        }
-      },
-      {
-        $sort: { dueDate: 1 }
-      }
-    ]);
+    // const todayTasks1 = await SubTaskModel.aggregate([
+    //   {
+    //     $match: {
+    //       dueDate: endOfDayUTC.toISOString(),
+    //       isActive: true
+    //     }
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: 'chats',
+    //       localField: '_id',
+    //       foreignField: 'roomId',
+    //       as: 'chats'
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       people: { $map: { input: "$people", as: "person", in: { $toObjectId: "$$person" } } }
+    //     }
+    //   },
+    //   {
+    //     $sort: { dueDate: 1 }
+    //   }
+    // ]);
 
 
 
@@ -73,7 +85,7 @@ const taskHelpers = {
 
     const combinedTasks = [...todayTasks, ...prevTasks];
 
-    return { todayTasks, prevTasks }
+    return { todayTasks, prevTasks, nextDayTasks }
   },
 
   getProjectByClient: async () => {
