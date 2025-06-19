@@ -244,6 +244,8 @@ const taskControllers = () => {
                 projectResponse = [...prevTasks];
             } else if (date === "tomorrow") {
                 projectResponse = [...nextDayTasks]
+            } else if (date === "todayandtomorrow") {
+                projectResponse = [...todayTasks, ...prevTasks];
             } else if (date === "all") {
                 projectResponse = [...todayTasks, ...prevTasks, ...nextDayTasks];
             }
