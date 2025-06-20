@@ -29,7 +29,7 @@ const getBillings = async (req, res) => {
 
         const [records, total] = await Promise.all([
             BillingModel.find(query)
-                .sort({ createdAt: -1 })
+                .sort({ expiryDate: 1 })
                 .skip(skip)
                 .limit(parseInt(limit)),
             BillingModel.countDocuments(query)
