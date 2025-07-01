@@ -56,7 +56,7 @@ const punchInControllers = () => {
             );
 
             // Check if the user is within the 30-meter radius
-            if (distance <= 30) {
+            if (distance <= 100) {
                 // Create a new punch-in record with successful status
                 const punchInRecord = await PunchInRecord.create({
                     userId,
@@ -198,7 +198,7 @@ const punchInControllers = () => {
             );
 
             // Check if the user is within the 30-meter radius
-            if (distance <= 30) {
+            if (distance <= 100) {
                 // Create a new punch-in record with successful status
                 const punchOutRecord = await PunchOutRecord.create({
                     userId,
