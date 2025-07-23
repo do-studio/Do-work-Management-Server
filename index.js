@@ -46,19 +46,6 @@ expressConfig(app)
 routes(app)
 
 
-app.post('/bulk', async (req, res) => {
-   try {
-    const items = req.body; // Expecting an array of items
-    if (!Array.isArray(items)) {
-      return res.status(400).json({ message: 'Items should be an array' });
-    }
-
-    const result = await BillingModel.insertMany(items);
-    res.status(201).json({ message: 'Items added successfully', data: result });
-  } catch (err) {
-    res.status(500).json({ message: 'Error adding items', error: err.message });
-  }
-});
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));

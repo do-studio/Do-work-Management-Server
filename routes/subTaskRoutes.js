@@ -21,6 +21,9 @@ const subTaskRoutes = ()=>{
     router.patch('/assignSubTask/:projectId',permissionMiddleware("people"),controllers.assignSubTask)
     router.patch('/removeSubTask/:projectId',permissionMiddleware("remove"),controllers.removeSubTsk)
     router.patch('/dndSubTasks',controllers.dndSubTaskUpdate)
+
+
+    router.get('/client',controllers.getClientSubtasks)
     
     return router
 }

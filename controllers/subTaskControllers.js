@@ -24,7 +24,7 @@ const subTaskControllers = () => {
             }
             const { taskId, taskName } = value
 
-            
+
             const assigner = req.payload.id
 
 
@@ -404,7 +404,7 @@ const subTaskControllers = () => {
                     assigner,
                     notification: `The priority of the task "${subTaskName}" has been updated from ${previousPriority} to ${value.priority}.`
                 }),
-                
+
             ]);
 
 
@@ -419,7 +419,7 @@ const subTaskControllers = () => {
 
 
 
-            if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse ) {
+            if (subTaskPriorityUpdateResponse.modifiedCount && notificationResponse) {
                 return res.status(200).json({
                     status: true,
                     notification: notificationResponse,
@@ -470,7 +470,7 @@ const subTaskControllers = () => {
                 });
             };
 
-          
+
 
 
             const [subTaskDateUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all(
@@ -552,7 +552,7 @@ const subTaskControllers = () => {
                     userHelpers.addNotificationCount(assigner),
                     notificationHelpers.addNotification({ assigner, notification: `${isAdded ? "assigned task to" : "removed task from"} ${assignee}` })
                 ]
-            )   
+            )
 
             const subTaskNew = await SubTaskModel.findById(value.subTaskId);
 
@@ -590,21 +590,21 @@ const subTaskControllers = () => {
 
             queryArray.push(userHelpers.addNotificationCount(assigner), notificationHelpers.addNotification({ assigner, notification: `removed a subtask` }))
 
-            
+
             const subTaskRemoveResponse = await Promise.all(queryArray)
             const removeStatus = subTaskRemoveResponse.every(response => response)
             // Emit a socket event to update all connected clients
             req.app.get("socketio").emit("subtaskUpdated", {
-                subtask: {_id:value[0]}, type: "remove"
+                subtask: { _id: value[0] }, type: "remove"
             });
             console.log('Emitting subTaskDeleteUpdated event:', value); // Debug log
             if (removeStatus) {
-                
+
                 return res.status(200).json({ status: true, message: `${value.length > 1 ? "Sub tasks" : "Sub task"} removed`, notification: subTaskRemoveResponse[subTaskRemoveResponse.length - 1] })
             }
 
 
-           
+
 
             return res.status(200).json({ status: false, message: `Error removing ${value.length > 1 ? "sub tasks" : "sub task"}` })
         } catch (error) {
@@ -645,6 +645,53 @@ const subTaskControllers = () => {
     }
 
 
+    const getClientSubtasks = async (req, res) => {
+        try {
+            const schema = Joi.object({
+                client: Joi.string().required(),
+                page: Joi.number().min(1).default(1),
+                limit: Joi.number().min(1).max(100).default(10)
+            });
+            const { error, value } = schema.validate(req.query);
+            if (error) {
+                return res.status(400).json({ status: false, message: error.details[0].message });
+            }
+            const { client, page, limit } = value;
+
+            const query = { client };
+            // Only select fields needed for image and basic info
+            const projection = { task: 1, client: 1, image: 1, dueDate: 1, status: 1, priority: 1 };
+
+            const total = await SubTaskModel.countDocuments(query);
+            const subtasks = await SubTaskModel.find(
+                { ...query, isActive: true },
+                projection
+            )
+                .populate({
+                    path: 'taskId',
+                    select: 'name', // Select fields you want from the Task model
+                    options: { lean: true }
+                })
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit)
+                .lean();
+
+
+            return res.status(200).json({
+                data: subtasks,
+                total,
+                page,
+                pages: Math.ceil(total / limit)
+            });
+        } catch (error) {
+            console.error('Error in getClientSubtasks:', error);
+            return res.status(500).json({ status: false, message: error.message });
+        }
+    }
+
+
+
     return {
         addSubTask,
         updateSubTaskName,
@@ -656,7 +703,8 @@ const subTaskControllers = () => {
         updateDynamicField,
         assignSubTask,
         removeSubTsk,
-        dndSubTaskUpdate
+        dndSubTaskUpdate,
+        getClientSubtasks
     }
 }
 
