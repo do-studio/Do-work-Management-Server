@@ -38,6 +38,9 @@ const SubTaskSchema = new Schema(
         order: {
             type: Number,
             default: 0
+        },
+        client: {
+            type: String
         }
     },
     {

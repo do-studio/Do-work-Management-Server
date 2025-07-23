@@ -117,9 +117,9 @@ const projectControllers = () => {
 
             value.name = value.name.toLowerCase()
             const projectExists = await projectHelpers.findProjectByName(value.name)
-            if (projectExists) {
-                return res.status(200).json({ status: false, message: "Project name already exists" })
-            }
+            // if (projectExists) {
+            //     return res.status(200).json({ status: false, message: "Project name already exists" })
+            // }
 
             const assigner = req.payload.id
             const [projectResponse, userNotificationResponse, notificationResponse] = await Promise.all(

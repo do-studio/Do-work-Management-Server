@@ -1,13 +1,15 @@
 import { model, Schema } from "mongoose";
 
 
-const ProjectSchema = new Schema (
+const ProjectSchema = new Schema(
     {
         name: {
             type: String,
+            unique: false,
             required: true
+
         },
-        isActive:{
+        isActive: {
             type: Boolean,
             default: true
         }

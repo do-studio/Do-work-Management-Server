@@ -14,26 +14,28 @@ import clientRoutes from './clientRoutes.js';
 import attendanceRoute from './attendanceRoute.js';
 import reminderRoutes from './reminderRoutes.js'; // Import reminder routes
 import billingRoutes from './billingRoutes.js';
+import scheduleRoutes from './scheduleRoutes.js';
 
 
 
 
-const routes = (app)=>{
-    app.use('/api/auth',authRoutes());
-    app.use('/api/admin',authMiddleware,adminRoutes());
-    app.use('/api/user',authMiddleware,userRoutes());
-    app.use('/api/projects',authMiddleware,projectRoutes());
-    app.use('/api/tasks',authMiddleware,taskRoutes());
-    app.use('/api/subTasks',authMiddleware,subTaskRoutes());
-    app.use('/api/chat',authMiddleware,chatRoutes());
-    app.use('/api/notifications',authMiddleware,notificationRoutes());
-    app.use('/api/headers',authMiddleware,headerRoutes());
-    app.use('/api/status',authMiddleware,statusRoutes());
-    app.use('/api/priority',authMiddleware,priorityRoutes());
-    app.use('/api/client',authMiddleware,clientRoutes());
-    app.use('/api/attendance',authMiddleware,attendanceRoute());
+const routes = (app) => {
+    app.use('/api/auth', authRoutes());
+    app.use('/api/admin', authMiddleware, adminRoutes());
+    app.use('/api/user', authMiddleware, userRoutes());
+    app.use('/api/projects', authMiddleware, projectRoutes());
+    app.use('/api/tasks', authMiddleware, taskRoutes());
+    app.use('/api/subTasks', authMiddleware, subTaskRoutes());
+    app.use('/api/chat', authMiddleware, chatRoutes());
+    app.use('/api/notifications', authMiddleware, notificationRoutes());
+    app.use('/api/headers', authMiddleware, headerRoutes());
+    app.use('/api/status', authMiddleware, statusRoutes());
+    app.use('/api/priority', authMiddleware, priorityRoutes());
+    app.use('/api/client', authMiddleware, clientRoutes());
+    app.use('/api/attendance', authMiddleware, attendanceRoute());
     app.use('/api/reminders', authMiddleware, reminderRoutes()); // Use reminder routes
-    app.use('/api/billings',authMiddleware, billingRoutes()); // Use billing routes 
+    app.use('/api/billings', authMiddleware, billingRoutes()); // Use billing routes 
+    app.use('/api/schedules', authMiddleware, scheduleRoutes());
 
 }
 
