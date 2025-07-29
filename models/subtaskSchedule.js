@@ -13,7 +13,11 @@ const subtaskScheduleSchema = new mongoose.Schema({
   subtasks: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'subtasks',
-  }]
+  }],
+  projectId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'projects', // Ensure this matches your Project model name
+  }
 }, {
   timestamps: true
 });

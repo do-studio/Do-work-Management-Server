@@ -7,6 +7,7 @@ import notificationHelpers from "../helpers/notificationHelpers.js"
 import { SubTaskModel } from "../models/subTasks.js"
 import TaskModel from "../models/tasks.js"
 import ChatModel from "../models/chats.js"
+import mongoose from "mongoose"
 
 
 const subTaskControllers = () => {
@@ -644,52 +645,108 @@ const subTaskControllers = () => {
         }
     }
 
-
     const getClientSubtasks = async (req, res) => {
         try {
+            // Validation schema
             const schema = Joi.object({
                 client: Joi.string().required(),
                 page: Joi.number().min(1).default(1),
-                limit: Joi.number().min(1).max(100).default(10)
+                limit: Joi.number().min(1).max(100).default(10),
+                selectedProject: Joi.string().required()
             });
+
+            // Validate query
             const { error, value } = schema.validate(req.query);
             if (error) {
-                return res.status(400).json({ status: false, message: error.details[0].message });
+                return res.status(400).json({
+                    status: false,
+                    message: error.details[0].message
+                });
             }
-            const { client, page, limit } = value;
 
-            const query = { client };
-            // Only select fields needed for image and basic info
-            const projection = { task: 1, client: 1, image: 1, dueDate: 1, status: 1, priority: 1 };
+            const { client, page, limit, selectedProject } = value;
 
-            const total = await SubTaskModel.countDocuments(query);
-            const subtasks = await SubTaskModel.find(
-                { ...query, isActive: true },
-                projection
-            )
-                .populate({
-                    path: 'taskId',
-                    select: 'name', // Select fields you want from the Task model
-                    options: { lean: true }
-                })
-                .sort({ createdAt: -1 })
-                .skip((page - 1) * limit)
-                .limit(limit)
-                .lean();
+            // Convert selectedProject to ObjectId
+            const projectId =new  mongoose.Types.ObjectId(selectedProject);
 
+            // Aggregation pipeline
+            const result = await SubTaskModel.aggregate([
+                {
+                    $match: {
+                        client: client,
+                        isActive: true
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'tasks',
+                        localField: 'taskId',
+                        foreignField: '_id',
+                        as: 'taskDetails'
+                    }
+                },
+                { $unwind: '$taskDetails' },
+                {
+                    $match: {
+                        'taskDetails.projectId': projectId
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'projects',
+                        localField: 'taskDetails.projectId',
+                        foreignField: '_id',
+                        as: 'projectDetails'
+                    }
+                },
+                { $unwind: '$projectDetails' },
+                {
+                    $project: {
+                        task: 1,
+                        client: 1,
+                        image: 1,
+                        dueDate: 1,
+                        status: 1,
+                        priority: 1,
+                        createdAt: 1,
+                        taskName: '$taskDetails.name',
+                        projectName: '$projectDetails.name'
+                    }
+                },
+                {
+                    $facet: {
+                        data: [
+                            { $sort: { createdAt: -1 } },
+                            { $skip: (page - 1) * limit },
+                            { $limit: limit }
+                        ],
+                        totalCount: [
+                            { $count: 'count' }
+                        ]
+                    }
+                }
+            ]);
+
+            const data = result[0].data || [];
+            const total = result[0].totalCount[0]?.count || 0;
 
             return res.status(200).json({
-                data: subtasks,
+                status: true,
+                data,
                 total,
                 page,
                 pages: Math.ceil(total / limit)
             });
+
         } catch (error) {
             console.error('Error in getClientSubtasks:', error);
-            return res.status(500).json({ status: false, message: error.message });
+            return res.status(500).json({
+                status: false,
+                message: 'Internal Server Error',
+                error: error.message
+            });
         }
-    }
-
+    };
 
 
     return {

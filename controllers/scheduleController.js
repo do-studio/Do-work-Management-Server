@@ -4,19 +4,25 @@ import dayjs from 'dayjs'
 
 const getSchedulesByMonthYear = async (req, res) => {
     try {
-        let { startDate, endDate, clientId } = req.query;
-
-        if (!startDate || !endDate) {
-            return res.status(400).json({ message: 'startDate and endDate are required' });
-        }
-
-        startDate = dayjs(startDate).startOf('day').toDate();
-        endDate = dayjs(endDate).endOf('day').toDate();
+        let { startDate, endDate, clientId, projectId } = req.query;
 
         // Build the base query
-        const query = {
-            date: { $gte: startDate, $lte: endDate }
-        };
+        const query = {};
+
+        if (startDate || endDate) {
+            startDate = dayjs(startDate).startOf('day').toDate();
+            endDate = dayjs(endDate).endOf('day').toDate();
+            query.date = { $gte: startDate, $lte: endDate }
+        }
+
+        if (!projectId) {
+            return res.status(400).json({ message: 'Provide ProjectId' });
+        }
+
+        if (projectId) {
+            query.projectId = projectId;
+        }
+
 
         // Add clientId to query if provided
         if (clientId) {
@@ -44,9 +50,8 @@ const getSchedulesByMonthYear = async (req, res) => {
 
 const createOrUpdateSubtaskSchedule = async (req, res) => {
     try {
-        const { clientId, date, subtasks } = req.body;
-        console.log(subtasks)
-        console.log("Date",date)
+        const { clientId, date, subtasks, projectId } = req.body;
+        console.log(req.body)
 
         // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
@@ -85,7 +90,9 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
             result = await SubtaskSchedule.create({
                 clientId,
                 date: new Date(date),
-                subtasks
+                subtasks,
+                projectId
+
             });
         }
 
@@ -105,8 +112,8 @@ const removeAllSubtasksForDate = async (req, res) => {
     try {
         const { clientId, date } = req.body;
 
-        console.log("ClientId",clientId)
-        console.log("Date",date)
+        console.log("ClientId", clientId)
+        console.log("Date", date)
 
         // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
