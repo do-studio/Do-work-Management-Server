@@ -651,8 +651,7 @@ const subTaskControllers = () => {
             const schema = Joi.object({
                 client: Joi.string().required(),
                 page: Joi.number().min(1).default(1),
-                limit: Joi.number().min(1).max(100).default(10),
-                selectedProject: Joi.string().required()
+                limit: Joi.number().min(1).max(100).default(20)
             });
 
             // Validate query
@@ -664,53 +663,14 @@ const subTaskControllers = () => {
                 });
             }
 
-            const { client, page, limit, selectedProject } = value;
+            const { client, page, limit } = value;
 
-            // Convert selectedProject to ObjectId
-            const projectId =new  mongoose.Types.ObjectId(selectedProject);
-
-            // Aggregation pipeline
+            // Simple aggregation without joins
             const result = await SubTaskModel.aggregate([
                 {
                     $match: {
                         client: client,
                         isActive: true
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'tasks',
-                        localField: 'taskId',
-                        foreignField: '_id',
-                        as: 'taskDetails'
-                    }
-                },
-                { $unwind: '$taskDetails' },
-                {
-                    $match: {
-                        'taskDetails.projectId': projectId
-                    }
-                },
-                {
-                    $lookup: {
-                        from: 'projects',
-                        localField: 'taskDetails.projectId',
-                        foreignField: '_id',
-                        as: 'projectDetails'
-                    }
-                },
-                { $unwind: '$projectDetails' },
-                {
-                    $project: {
-                        task: 1,
-                        client: 1,
-                        image: 1,
-                        dueDate: 1,
-                        status: 1,
-                        priority: 1,
-                        createdAt: 1,
-                        taskName: '$taskDetails.name',
-                        projectName: '$projectDetails.name'
                     }
                 },
                 {
@@ -747,6 +707,7 @@ const subTaskControllers = () => {
             });
         }
     };
+
 
 
     return {

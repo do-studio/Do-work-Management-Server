@@ -15,6 +15,7 @@ import attendanceRoute from './attendanceRoute.js';
 import reminderRoutes from './reminderRoutes.js'; // Import reminder routes
 import billingRoutes from './billingRoutes.js';
 import scheduleRoutes from './scheduleRoutes.js';
+import adPerformanceRoutes from './adPerformanceRoute.js';
 
 
 
@@ -36,6 +37,7 @@ const routes = (app) => {
     app.use('/api/reminders', authMiddleware, reminderRoutes()); // Use reminder routes
     app.use('/api/billings', authMiddleware, billingRoutes()); // Use billing routes 
     app.use('/api/schedules', authMiddleware, scheduleRoutes());
+    app.use('/api/ad-performance', authMiddleware, adPerformanceRoutes());
 
 }
 

@@ -4,7 +4,7 @@ import dayjs from 'dayjs'
 
 const getSchedulesByMonthYear = async (req, res) => {
     try {
-        let { startDate, endDate, clientId, projectId } = req.query;
+        let { startDate, endDate, clientId } = req.query;
 
         // Build the base query
         const query = {};
@@ -14,15 +14,6 @@ const getSchedulesByMonthYear = async (req, res) => {
             endDate = dayjs(endDate).endOf('day').toDate();
             query.date = { $gte: startDate, $lte: endDate }
         }
-
-        if (!projectId) {
-            return res.status(400).json({ message: 'Provide ProjectId' });
-        }
-
-        if (projectId) {
-            query.projectId = projectId;
-        }
-
 
         // Add clientId to query if provided
         if (clientId) {
@@ -50,7 +41,7 @@ const getSchedulesByMonthYear = async (req, res) => {
 
 const createOrUpdateSubtaskSchedule = async (req, res) => {
     try {
-        const { clientId, date, subtasks, projectId } = req.body;
+        const { clientId, date, subtasks } = req.body;
         console.log(req.body)
 
         // Validate input
@@ -91,8 +82,6 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
                 clientId,
                 date: new Date(date),
                 subtasks,
-                projectId
-
             });
         }
 
