@@ -65,8 +65,11 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
         }
 
         // Normalize date to start-of-day
-        const startOfDay = dayjs(date).startOf('day').toDate();
-        const endOfDay = dayjs(date).endOf('day').toDate();
+        const startOfDay = new Date(date);
+        startOfDay.setUTCHours(0, 0, 0, 0); // force midnight UTC
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setUTCHours(23, 59, 59, 999);
+
 
         // Find existing schedule for this client and date range
         const existingSchedule = await SubtaskSchedule.findOne({
@@ -115,8 +118,10 @@ const removeAllSubtasksForDate = async (req, res) => {
         }
 
         // Match within the day range
-        const startOfDay = dayjs(date).startOf('day').toDate();
-        const endOfDay = dayjs(date).endOf('day').toDate();
+        const startOfDay = new Date(date);
+        startOfDay.setUTCHours(0, 0, 0, 0);
+        const endOfDay = new Date(startOfDay);
+        endOfDay.setUTCHours(23, 59, 59, 999);
 
         const result = await SubtaskSchedule.findOneAndDelete({
             clientId,
