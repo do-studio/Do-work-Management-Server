@@ -2,21 +2,26 @@ import mongoose from 'mongoose';
 import SubtaskSchedule from '../models/subtaskSchedule.js';
 import dayjs from 'dayjs';
 
+// Helper: parse YYYY-MM-DD as UTC midnight
+function parseDateAsUTC(dateStr) {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+}
+
 // -------------------- GET SCHEDULES --------------------
 const getSchedulesByMonthYear = async (req, res) => {
     try {
         let { startDate, endDate, clientId } = req.query;
-
-        // Build the base query
         const query = {};
 
         if (startDate || endDate) {
-            startDate = dayjs(startDate).startOf('day').toDate();
-            endDate = dayjs(endDate).endOf('day').toDate();
-            query.date = { $gte: startDate, $lte: endDate };
+            const start = parseDateAsUTC(startDate);
+            const end = parseDateAsUTC(endDate);
+            end.setUTCHours(23, 59, 59, 999);
+
+            query.date = { $gte: start, $lte: end };
         }
 
-        // Add clientId to query if provided
         if (clientId) {
             query.clientId = clientId;
         }
@@ -45,13 +50,12 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
         const { clientId, date, subtasks } = req.body;
         console.log(req.body);
 
-        // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
             return res.status(400).json({ message: 'Invalid client ID' });
         }
 
-        if (!date || isNaN(new Date(date).getTime())) {
-            return res.status(400).json({ message: 'Invalid date' });
+        if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ message: 'Date must be in YYYY-MM-DD format' });
         }
 
         if (!Array.isArray(subtasks)) {
@@ -64,14 +68,10 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
             }
         }
 
-        // Normalize date to start-of-day
-        const startOfDay = new Date(date);
-        startOfDay.setUTCHours(0, 0, 0, 0); // force midnight UTC
+        const startOfDay = parseDateAsUTC(date);
         const endOfDay = new Date(startOfDay);
         endOfDay.setUTCHours(23, 59, 59, 999);
 
-
-        // Find existing schedule for this client and date range
         const existingSchedule = await SubtaskSchedule.findOne({
             clientId,
             date: { $gte: startOfDay, $lte: endOfDay }
@@ -85,7 +85,7 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
         } else {
             result = await SubtaskSchedule.create({
                 clientId,
-                date: startOfDay, // always store normalized date
+                date: startOfDay,
                 subtasks,
             });
         }
@@ -113,13 +113,11 @@ const removeAllSubtasksForDate = async (req, res) => {
             return res.status(400).json({ message: 'Invalid client ID' });
         }
 
-        if (!date || isNaN(new Date(date).getTime())) {
-            return res.status(400).json({ message: 'Invalid date' });
+        if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            return res.status(400).json({ message: 'Date must be in YYYY-MM-DD format' });
         }
 
-        // Match within the day range
-        const startOfDay = new Date(date);
-        startOfDay.setUTCHours(0, 0, 0, 0);
+        const startOfDay = parseDateAsUTC(date);
         const endOfDay = new Date(startOfDay);
         endOfDay.setUTCHours(23, 59, 59, 999);
 
