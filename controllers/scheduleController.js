@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import SubtaskSchedule from '../models/subtaskSchedule.js';
-import dayjs from 'dayjs'
+import dayjs from 'dayjs';
 
+// -------------------- GET SCHEDULES --------------------
 const getSchedulesByMonthYear = async (req, res) => {
     try {
         let { startDate, endDate, clientId } = req.query;
@@ -12,7 +13,7 @@ const getSchedulesByMonthYear = async (req, res) => {
         if (startDate || endDate) {
             startDate = dayjs(startDate).startOf('day').toDate();
             endDate = dayjs(endDate).endOf('day').toDate();
-            query.date = { $gte: startDate, $lte: endDate }
+            query.date = { $gte: startDate, $lte: endDate };
         }
 
         // Add clientId to query if provided
@@ -21,13 +22,13 @@ const getSchedulesByMonthYear = async (req, res) => {
         }
 
         const schedules = await SubtaskSchedule.find(query)
-            .populate('clientId') // Populate client info
+            .populate('clientId')
             .populate({
                 path: 'subtasks',
                 populate: {
-                    path: 'taskId', // Populate taskId within each subtask
-                    model: 'tasks',  // Ensure this matches your Task model name
-                    select: 'name description status' // Optional: select specific fields
+                    path: 'taskId',
+                    model: 'tasks',
+                    select: 'name description status'
                 }
             });
 
@@ -38,11 +39,11 @@ const getSchedulesByMonthYear = async (req, res) => {
     }
 };
 
-
+// -------------------- CREATE / UPDATE --------------------
 const createOrUpdateSubtaskSchedule = async (req, res) => {
     try {
         const { clientId, date, subtasks } = req.body;
-        console.log(req.body)
+        console.log(req.body);
 
         // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
@@ -57,35 +58,35 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
             return res.status(400).json({ message: 'Subtasks must be an array' });
         }
 
-        // Check if all subtask IDs are valid
         for (const subtaskId of subtasks) {
             if (!mongoose.Types.ObjectId.isValid(subtaskId)) {
                 return res.status(400).json({ message: `Invalid subtask ID: ${subtaskId}` });
             }
         }
 
-        // Find existing schedule for this client and date
+        // Normalize date to start-of-day
+        const startOfDay = dayjs(date).startOf('day').toDate();
+        const endOfDay = dayjs(date).endOf('day').toDate();
+
+        // Find existing schedule for this client and date range
         const existingSchedule = await SubtaskSchedule.findOne({
             clientId,
-            date: new Date(date)
+            date: { $gte: startOfDay, $lte: endOfDay }
         });
 
         let result;
 
         if (existingSchedule) {
-            // Update existing schedule
             existingSchedule.subtasks = subtasks;
             result = await existingSchedule.save();
         } else {
-            // Create new schedule
             result = await SubtaskSchedule.create({
                 clientId,
-                date: new Date(date),
+                date: startOfDay, // always store normalized date
                 subtasks,
             });
         }
 
-        // Populate the references for the response
         const populatedResult = await SubtaskSchedule.findById(result._id)
             .populate('clientId')
             .populate('subtasks');
@@ -97,14 +98,14 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
     }
 };
 
+// -------------------- REMOVE --------------------
 const removeAllSubtasksForDate = async (req, res) => {
     try {
         const { clientId, date } = req.body;
 
-        console.log("ClientId", clientId)
-        console.log("Date", date)
+        console.log("ClientId", clientId);
+        console.log("Date", date);
 
-        // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
             return res.status(400).json({ message: 'Invalid client ID' });
         }
@@ -113,10 +114,13 @@ const removeAllSubtasksForDate = async (req, res) => {
             return res.status(400).json({ message: 'Invalid date' });
         }
 
-        // Find and delete the schedule for this client and date
+        // Match within the day range
+        const startOfDay = dayjs(date).startOf('day').toDate();
+        const endOfDay = dayjs(date).endOf('day').toDate();
+
         const result = await SubtaskSchedule.findOneAndDelete({
             clientId,
-            date: dayjs(date).startOf('day').toDate()
+            date: { $gte: startOfDay, $lte: endOfDay }
         });
 
         if (!result) {
@@ -141,7 +145,6 @@ const removeAllSubtasksForDate = async (req, res) => {
         });
     }
 };
-
 
 export default {
     getSchedulesByMonthYear,
