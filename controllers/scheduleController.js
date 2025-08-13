@@ -3,28 +3,31 @@ import SubtaskSchedule from '../models/subtaskSchedule.js';
 
 // Utility function to handle dates consistently
 const normalizeDate = (dateString) => {
-  // Handle both date-only (YYYY-MM-DD) and full ISO strings
-  const dateOnly = dateString.split('T')[0];
-  const [year, month, day] = dateOnly.split('-');
-  
-  // Create as UTC date at midnight (more reliable than string parsing)
-  return new Date(Date.UTC(year, month - 1, day));
+    // Handle both date-only (YYYY-MM-DD) and full ISO strings
+    const dateOnly = dateString.split('T')[0];
+    const [year, month, day] = dateOnly.split('-');
+
+    // Create as UTC date at midnight (more reliable than string parsing)
+    return new Date(Date.UTC(year, month - 1, day));
 };
 
 const validateDateInput = (date) => {
-  if (!date) return false;
-  
-  // Check for YYYY-MM-DD format or valid ISO string
-  const dateRegex = /^\d{4}-\d{2}-\d{2}/;
-  if (!dateRegex.test(date)) return false;
-  
-  const d = new Date(date);
-  return !isNaN(d.getTime());
+    if (!date) return false;
+
+    // Check for YYYY-MM-DD format or valid ISO string
+    const dateRegex = /^\d{4}-\d{2}-\d{2}/;
+    if (!dateRegex.test(date)) return false;
+
+    const d = new Date(date);
+    return !isNaN(d.getTime());
 };
 
 const getSchedulesByMonthYear = async (req, res) => {
     try {
         let { startDate, endDate, clientId } = req.query;
+
+        console.log("Starting Date", startDate)
+        console.log("Ending Date", endDate)
 
         // Build the base query
         const query = {};
@@ -41,8 +44,8 @@ const getSchedulesByMonthYear = async (req, res) => {
             // Normalize dates
             startDate = startDate ? normalizeDate(startDate) : null;
             endDate = endDate ? new Date(normalizeDate(endDate).setUTCHours(23, 59, 59, 999)) : null;
-            
-            query.date = { 
+
+            query.date = {
                 ...(startDate && { $gte: startDate }),
                 ...(endDate && { $lte: endDate })
             };
@@ -69,9 +72,9 @@ const getSchedulesByMonthYear = async (req, res) => {
         res.json(schedules);
     } catch (err) {
         console.error('Error in getSchedules:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             message: 'Server error',
-            error: err.message 
+            error: err.message
         });
     }
 };
@@ -99,7 +102,7 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
             id => !mongoose.Types.ObjectId.isValid(id)
         );
         if (invalidSubtaskIds.length > 0) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 message: 'Invalid subtask IDs',
                 invalidIds: invalidSubtaskIds
             });
@@ -112,21 +115,21 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
         const result = await SubtaskSchedule.findOneAndUpdate(
             { clientId, date: normalizedDate },
             { subtasks },
-            { 
-                new: true, 
+            {
+                new: true,
                 upsert: true,
-                setDefaultsOnInsert: true 
+                setDefaultsOnInsert: true
             }
         )
-        .populate('clientId')
-        .populate('subtasks');
+            .populate('clientId')
+            .populate('subtasks');
 
         res.status(200).json(result);
     } catch (err) {
         console.error('Error in createOrUpdate:', err);
-        res.status(500).json({ 
-            message: 'Server error', 
-            error: err.message 
+        res.status(500).json({
+            message: 'Server error',
+            error: err.message
         });
     }
 };
