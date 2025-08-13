@@ -1,18 +1,6 @@
 import mongoose from 'mongoose';
 import SubtaskSchedule from '../models/subtaskSchedule.js';
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc.js';
-import timezone from 'dayjs/plugin/timezone.js';
-
-// Extend dayjs with UTC and timezone plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-// Utility function to normalize dates to UTC at start of day
-const normalizeDate = (date) => {
-  // Parse input as local date, then convert to UTC at start of day
-  return dayjs(date).startOf('day').utc().toDate();
-};
+import dayjs from 'dayjs'
 
 const getSchedulesByMonthYear = async (req, res) => {
     try {
@@ -22,13 +10,9 @@ const getSchedulesByMonthYear = async (req, res) => {
         const query = {};
 
         if (startDate || endDate) {
-            // Normalize dates to UTC start/end of day
-            startDate = startDate ? normalizeDate(startDate) : null;
-            endDate = endDate ? dayjs(endDate).utc().endOf('day').toDate() : null;
-            
-            query.date = {};
-            if (startDate) query.date.$gte = startDate;
-            if (endDate) query.date.$lte = endDate;
+            startDate = dayjs(startDate).startOf('day').toDate();
+            endDate = dayjs(endDate).endOf('day').toDate();
+            query.date = { $gte: startDate, $lte: endDate }
         }
 
         // Add clientId to query if provided
@@ -37,13 +21,13 @@ const getSchedulesByMonthYear = async (req, res) => {
         }
 
         const schedules = await SubtaskSchedule.find(query)
-            .populate('clientId')
+            .populate('clientId') // Populate client info
             .populate({
                 path: 'subtasks',
                 populate: {
-                    path: 'taskId',
-                    model: 'tasks',
-                    select: 'name description status'
+                    path: 'taskId', // Populate taskId within each subtask
+                    model: 'tasks',  // Ensure this matches your Task model name
+                    select: 'name description status' // Optional: select specific fields
                 }
             });
 
@@ -54,11 +38,12 @@ const getSchedulesByMonthYear = async (req, res) => {
     }
 };
 
+
 const createOrUpdateSubtaskSchedule = async (req, res) => {
     try {
         const { clientId, date, subtasks } = req.body;
-        console.log('Received date:', date); // Debug log
-        
+        console.log(req.body)
+
         // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
             return res.status(400).json({ message: 'Invalid client ID' });
@@ -79,19 +64,10 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
             }
         }
 
-        // Debug: Log date conversion steps
-        const parsedDate = dayjs(date);
-        console.log('Parsed date (local):', parsedDate.format());
-        console.log('Parsed date (UTC):', parsedDate.utc().format());
-
-        // Normalize the date to UTC start of day
-        const normalizedDate = normalizeDate(date);
-        console.log('Normalized UTC date:', normalizedDate, dayjs(normalizedDate).format());
-
         // Find existing schedule for this client and date
         const existingSchedule = await SubtaskSchedule.findOne({
             clientId,
-            date: normalizedDate
+            date: new Date(date)
         });
 
         let result;
@@ -104,7 +80,7 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
             // Create new schedule
             result = await SubtaskSchedule.create({
                 clientId,
-                date: normalizedDate,
+                date: new Date(date),
                 subtasks,
             });
         }
@@ -125,8 +101,8 @@ const removeAllSubtasksForDate = async (req, res) => {
     try {
         const { clientId, date } = req.body;
 
-        console.log("ClientId", clientId);
-        console.log("Original Date", date);
+        console.log("ClientId", clientId)
+        console.log("Date", date)
 
         // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
@@ -137,14 +113,10 @@ const removeAllSubtasksForDate = async (req, res) => {
             return res.status(400).json({ message: 'Invalid date' });
         }
 
-        // Normalize the date to UTC start of day
-        const normalizedDate = normalizeDate(date);
-        console.log("Normalized UTC Date", normalizedDate);
-
         // Find and delete the schedule for this client and date
         const result = await SubtaskSchedule.findOneAndDelete({
             clientId,
-            date: normalizedDate
+            date: dayjs(date).startOf('day').toDate()
         });
 
         if (!result) {
@@ -170,38 +142,9 @@ const removeAllSubtasksForDate = async (req, res) => {
     }
 };
 
-const getServerTimeInfo = async (req, res) => {
-    try {
-        const now = new Date();
-        const testDate = '2025-08-13';
-        
-        const timeInfo = {
-            serverTime: now.toString(),
-            serverISOString: now.toISOString(),
-            serverTimezoneOffset: now.getTimezoneOffset(),
-            serverTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            dayjsVersion: dayjs.version,
-            dateHandling: {
-                inputDate: testDate,
-                dayjsLocal: dayjs(testDate).format(),
-                dayjsUTC: dayjs(testDate).utc().format(),
-                normalizedDate: normalizeDate(testDate),
-                normalizedDateString: normalizeDate(testDate).toString(),
-                normalizedDateISO: normalizeDate(testDate).toISOString()
-            },
-            note: 'All dates should be stored and compared in UTC format'
-        };
-
-        res.json(timeInfo);
-    } catch (err) {
-        console.error('Error getting server time info:', err);
-        res.status(500).json({ message: 'Server error', error: err.message });
-    }
-};
 
 export default {
     getSchedulesByMonthYear,
     createOrUpdateSubtaskSchedule,
-    removeAllSubtasksForDate,
-    getServerTimeInfo
+    removeAllSubtasksForDate
 };
