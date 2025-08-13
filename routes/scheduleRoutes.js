@@ -11,7 +11,7 @@ const scheduleRoutes = () => {
 
     router.delete('/', scheduleController.removeAllSubtasksForDate);
 
-    router.get('/test-time', scheduleController.getServerTimeInfo)
+    // router.get('/test-time', scheduleController.getServerTimeInfo)
     return router;
 }
 
