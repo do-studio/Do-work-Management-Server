@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import SubtaskSchedule from '../models/subtaskSchedule.js';
 import dayjs from 'dayjs';
-// Corrected import paths for dayjs plugins
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 
@@ -11,7 +10,8 @@ dayjs.extend(timezone);
 
 // Utility function to normalize dates to UTC at start of day
 const normalizeDate = (date) => {
-    return dayjs(date).utc().startOf('day').toDate();
+  // Parse input as local date, then convert to UTC at start of day
+  return dayjs(date).startOf('day').utc().toDate();
 };
 
 const getSchedulesByMonthYear = async (req, res) => {
@@ -25,7 +25,7 @@ const getSchedulesByMonthYear = async (req, res) => {
             // Normalize dates to UTC start/end of day
             startDate = startDate ? normalizeDate(startDate) : null;
             endDate = endDate ? dayjs(endDate).utc().endOf('day').toDate() : null;
-
+            
             query.date = {};
             if (startDate) query.date.$gte = startDate;
             if (endDate) query.date.$lte = endDate;
@@ -57,8 +57,8 @@ const getSchedulesByMonthYear = async (req, res) => {
 const createOrUpdateSubtaskSchedule = async (req, res) => {
     try {
         const { clientId, date, subtasks } = req.body;
-        console.log(req.body);
-
+        console.log('Received date:', date); // Debug log
+        
         // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
             return res.status(400).json({ message: 'Invalid client ID' });
@@ -79,8 +79,14 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
             }
         }
 
+        // Debug: Log date conversion steps
+        const parsedDate = dayjs(date);
+        console.log('Parsed date (local):', parsedDate.format());
+        console.log('Parsed date (UTC):', parsedDate.utc().format());
+
         // Normalize the date to UTC start of day
         const normalizedDate = normalizeDate(date);
+        console.log('Normalized UTC date:', normalizedDate, dayjs(normalizedDate).format());
 
         // Find existing schedule for this client and date
         const existingSchedule = await SubtaskSchedule.findOne({
@@ -120,7 +126,7 @@ const removeAllSubtasksForDate = async (req, res) => {
         const { clientId, date } = req.body;
 
         console.log("ClientId", clientId);
-        console.log("Date", date);
+        console.log("Original Date", date);
 
         // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
@@ -133,6 +139,7 @@ const removeAllSubtasksForDate = async (req, res) => {
 
         // Normalize the date to UTC start of day
         const normalizedDate = normalizeDate(date);
+        console.log("Normalized UTC Date", normalizedDate);
 
         // Find and delete the schedule for this client and date
         const result = await SubtaskSchedule.findOneAndDelete({
@@ -166,20 +173,23 @@ const removeAllSubtasksForDate = async (req, res) => {
 const getServerTimeInfo = async (req, res) => {
     try {
         const now = new Date();
+        const testDate = '2025-08-13';
+        
         const timeInfo = {
             serverTime: now.toString(),
             serverISOString: now.toISOString(),
             serverTimezoneOffset: now.getTimezoneOffset(),
             serverTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             dayjsVersion: dayjs.version,
-            dayjsPlugins: ['utc', 'timezone'], // List of plugins you're using
-            sampleDateConversion: {
-                inputDate: '2025-08-13',
-                rawDate: new Date('2025-08-13').toString(),
-                dayjsLocal: dayjs('2025-08-13').format(),
-                dayjsUTC: dayjs('2025-08-13').utc().format(),
-                normalizedUTC: normalizeDate('2025-08-13').toString()
-            }
+            dateHandling: {
+                inputDate: testDate,
+                dayjsLocal: dayjs(testDate).format(),
+                dayjsUTC: dayjs(testDate).utc().format(),
+                normalizedDate: normalizeDate(testDate),
+                normalizedDateString: normalizeDate(testDate).toString(),
+                normalizedDateISO: normalizeDate(testDate).toISOString()
+            },
+            note: 'All dates should be stored and compared in UTC format'
         };
 
         res.json(timeInfo);
@@ -188,8 +198,6 @@ const getServerTimeInfo = async (req, res) => {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
-
-
 
 export default {
     getSchedulesByMonthYear,
