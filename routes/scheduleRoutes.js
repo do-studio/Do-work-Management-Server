@@ -10,6 +10,8 @@ const scheduleRoutes = () => {
     router.post('/', scheduleController.createOrUpdateSubtaskSchedule);
 
     router.delete('/', scheduleController.removeAllSubtasksForDate);
+
+    router.get('/test-time', scheduleController.getServerTimeInfo)
     return router;
 }
 

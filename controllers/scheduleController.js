@@ -1,27 +1,37 @@
 import mongoose from 'mongoose';
 import SubtaskSchedule from '../models/subtaskSchedule.js';
 import dayjs from 'dayjs';
+// Corrected import paths for dayjs plugins
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
 
-// Helper: parse YYYY-MM-DD as UTC midnight
-function parseDateAsUTC(dateStr) {
-    const [year, month, day] = dateStr.split('-').map(Number);
-    return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-}
+// Extend dayjs with UTC and timezone plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
-// -------------------- GET SCHEDULES --------------------
+// Utility function to normalize dates to UTC at start of day
+const normalizeDate = (date) => {
+    return dayjs(date).utc().startOf('day').toDate();
+};
+
 const getSchedulesByMonthYear = async (req, res) => {
     try {
         let { startDate, endDate, clientId } = req.query;
+
+        // Build the base query
         const query = {};
 
         if (startDate || endDate) {
-            const start = parseDateAsUTC(startDate);
-            const end = parseDateAsUTC(endDate);
-            end.setUTCHours(23, 59, 59, 999);
+            // Normalize dates to UTC start/end of day
+            startDate = startDate ? normalizeDate(startDate) : null;
+            endDate = endDate ? dayjs(endDate).utc().endOf('day').toDate() : null;
 
-            query.date = { $gte: start, $lte: end };
+            query.date = {};
+            if (startDate) query.date.$gte = startDate;
+            if (endDate) query.date.$lte = endDate;
         }
 
+        // Add clientId to query if provided
         if (clientId) {
             query.clientId = clientId;
         }
@@ -44,52 +54,56 @@ const getSchedulesByMonthYear = async (req, res) => {
     }
 };
 
-// -------------------- CREATE / UPDATE --------------------
 const createOrUpdateSubtaskSchedule = async (req, res) => {
     try {
         const { clientId, date, subtasks } = req.body;
         console.log(req.body);
 
+        // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
             return res.status(400).json({ message: 'Invalid client ID' });
         }
 
-        if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return res.status(400).json({ message: 'Date must be in YYYY-MM-DD format' });
+        if (!date || isNaN(new Date(date).getTime())) {
+            return res.status(400).json({ message: 'Invalid date' });
         }
 
         if (!Array.isArray(subtasks)) {
             return res.status(400).json({ message: 'Subtasks must be an array' });
         }
 
+        // Check if all subtask IDs are valid
         for (const subtaskId of subtasks) {
             if (!mongoose.Types.ObjectId.isValid(subtaskId)) {
                 return res.status(400).json({ message: `Invalid subtask ID: ${subtaskId}` });
             }
         }
 
-        const startOfDay = parseDateAsUTC(date);
-        const endOfDay = new Date(startOfDay);
-        endOfDay.setUTCHours(23, 59, 59, 999);
+        // Normalize the date to UTC start of day
+        const normalizedDate = normalizeDate(date);
 
+        // Find existing schedule for this client and date
         const existingSchedule = await SubtaskSchedule.findOne({
             clientId,
-            date: { $gte: startOfDay, $lte: endOfDay }
+            date: normalizedDate
         });
 
         let result;
 
         if (existingSchedule) {
+            // Update existing schedule
             existingSchedule.subtasks = subtasks;
             result = await existingSchedule.save();
         } else {
+            // Create new schedule
             result = await SubtaskSchedule.create({
                 clientId,
-                date: startOfDay,
+                date: normalizedDate,
                 subtasks,
             });
         }
 
+        // Populate the references for the response
         const populatedResult = await SubtaskSchedule.findById(result._id)
             .populate('clientId')
             .populate('subtasks');
@@ -101,7 +115,6 @@ const createOrUpdateSubtaskSchedule = async (req, res) => {
     }
 };
 
-// -------------------- REMOVE --------------------
 const removeAllSubtasksForDate = async (req, res) => {
     try {
         const { clientId, date } = req.body;
@@ -109,21 +122,22 @@ const removeAllSubtasksForDate = async (req, res) => {
         console.log("ClientId", clientId);
         console.log("Date", date);
 
+        // Validate input
         if (!mongoose.Types.ObjectId.isValid(clientId)) {
             return res.status(400).json({ message: 'Invalid client ID' });
         }
 
-        if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            return res.status(400).json({ message: 'Date must be in YYYY-MM-DD format' });
+        if (!date || isNaN(new Date(date).getTime())) {
+            return res.status(400).json({ message: 'Invalid date' });
         }
 
-        const startOfDay = parseDateAsUTC(date);
-        const endOfDay = new Date(startOfDay);
-        endOfDay.setUTCHours(23, 59, 59, 999);
+        // Normalize the date to UTC start of day
+        const normalizedDate = normalizeDate(date);
 
+        // Find and delete the schedule for this client and date
         const result = await SubtaskSchedule.findOneAndDelete({
             clientId,
-            date: { $gte: startOfDay, $lte: endOfDay }
+            date: normalizedDate
         });
 
         if (!result) {
@@ -149,8 +163,37 @@ const removeAllSubtasksForDate = async (req, res) => {
     }
 };
 
+const getServerTimeInfo = async (req, res) => {
+    try {
+        const now = new Date();
+        const timeInfo = {
+            serverTime: now.toString(),
+            serverISOString: now.toISOString(),
+            serverTimezoneOffset: now.getTimezoneOffset(),
+            serverTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            dayjsVersion: dayjs.version,
+            dayjsPlugins: ['utc', 'timezone'], // List of plugins you're using
+            sampleDateConversion: {
+                inputDate: '2025-08-13',
+                rawDate: new Date('2025-08-13').toString(),
+                dayjsLocal: dayjs('2025-08-13').format(),
+                dayjsUTC: dayjs('2025-08-13').utc().format(),
+                normalizedUTC: normalizeDate('2025-08-13').toString()
+            }
+        };
+
+        res.json(timeInfo);
+    } catch (err) {
+        console.error('Error getting server time info:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+
+
 export default {
     getSchedulesByMonthYear,
     createOrUpdateSubtaskSchedule,
-    removeAllSubtasksForDate
+    removeAllSubtasksForDate,
+    getServerTimeInfo
 };
