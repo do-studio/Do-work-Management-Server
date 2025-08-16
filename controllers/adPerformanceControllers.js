@@ -81,7 +81,13 @@ const createOrUpdateAdPerformance = async (req, res) => {
             existingPerformance.leadCount = leadCount;
             existingPerformance.adSpend = adSpend;
             await existingPerformance.save();
-            return res.status(200).json({ message: 'Ad performance updated', data: existingPerformance });
+
+            const populatedPerformance = await adPerformanceModel
+                .findById(existingPerformance._id)
+                .populate('clientId');
+
+
+            return res.status(200).json({ message: 'Ad performance updated', data: populatedPerformance });
         } else {
             // Create new record
             const newPerformance = new adPerformanceModel({
@@ -91,7 +97,11 @@ const createOrUpdateAdPerformance = async (req, res) => {
                 adSpend,
             });
             await newPerformance.save();
-            return res.status(201).json({ message: 'Ad performance created', data: newPerformance });
+
+            const populatedPerformance = await adPerformanceModel
+                .findById(newPerformance._id)
+                .populate('clientId');
+            return res.status(201).json({ message: 'Ad performance created', data: populatedPerformance });
         }
     } catch (err) {
         console.error('Error creating/updating adPerformance:', err);
