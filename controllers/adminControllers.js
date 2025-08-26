@@ -211,7 +211,7 @@ const adminControllers = () => {
 
 
             if (clonedProjectResponse && notificationResponse) {
-                allTasks.forEach(async (task) => await taskHelpers.addTask({ name: `${task.name}_clone${projectCount}`, headers: task.headers, order: task.order, projectId: clonedProjectResponse._id }))
+                allTasks.forEach(async (task) => await taskHelpers.addTask({ name: `${task.name}`, headers: task.headers, order: task.order, projectId: clonedProjectResponse._id }))
 
                 return res.status(200).json({ status: true, message: "Project cloned", data: clonedProjectResponse, notification: notificationResponse })
             }
