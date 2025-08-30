@@ -16,7 +16,7 @@ const mailSender = async (email, title, body) => {
 
     // Send emails to users
     let info = await transporter.sendMail({
-      from: "safeears - Email Verification",
+      from: "Do WorkManagement - Email Verification",
       to: email,
       subject: title,
       html: body,

@@ -25,12 +25,22 @@ const taskHelpers = {
         $lte: nextDayEndUTC.toISOString()
       },
       isActive: true
-    }).sort({ dueDate: 1 });
+    })
+      .populate({
+        path: "taskId",        // populate Task
+        select: "projectId"    // only bring projectId field
+      })
+      .sort({ dueDate: 1 });
 
     const todayTasks = await SubTaskModel.find({
       dueDate: endOfDayUTC.toISOString(),
       isActive: true
-    }).sort({ dueDate: 1 });;
+    })
+      .populate({
+        path: "taskId",
+        select: "projectId"
+      })
+      .sort({ dueDate: 1 });;
 
 
 
@@ -75,7 +85,12 @@ const taskHelpers = {
       // status: { $ne: "done" },
       status: { $nin: ["done", "posted"] }, // Not equal to "done" and "posted"
       isActive: true
-    }).sort({ dueDate: 1 });;
+    })
+      .populate({
+        path: "taskId",
+        select: "projectId"
+      })
+      .sort({ dueDate: 1 });;
 
     // return todayTasks1
 
