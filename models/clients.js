@@ -12,6 +12,10 @@ const ClientSchema = new Schema(
             type: String,
             default: "#05438a",
             required: true,
+        },
+        isActive:{
+            type: Boolean,
+            default: true
         }
     }, { timestamps: true }
 

@@ -1,15 +1,18 @@
-import express from 'express'
+import express from 'express';
+import mongoose from 'mongoose';
 import clientControllers from '../controllers/clientControllers.js';
+import ClientModel from '../models/clients.js';
 
 const clientRoutes = () => {
-    const router = express.Router();
-    const controllers = clientControllers()
+  const router = express.Router();
+  const controllers = clientControllers();
 
-    router.post('/addClient', controllers.addClient)
-    router.get('/getAllClients', controllers.getClients)
-    router.delete('/removeClient/:id',controllers.deleteClient)
+  // Normal client routes
+  router.post('/addClient', controllers.addClient);
+  router.get('/getAllClients', controllers.getClients);
+  router.delete('/removeClient/:id', controllers.deleteClient);
 
-    return router
-}
+  return router;
+};
 
-export default clientRoutes
+export default clientRoutes;
