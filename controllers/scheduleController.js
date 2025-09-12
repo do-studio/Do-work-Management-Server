@@ -26,8 +26,8 @@ const getSchedulesByMonthYear = async (req, res) => {
     try {
         let { startDate, endDate, clientId } = req.query;
 
-        console.log("Starting Date", startDate)
-        console.log("Ending Date", endDate)
+        console.log("Starting Date", startDate);
+        console.log("Ending Date", endDate);
 
         // Build the base query
         const query = {};
@@ -43,11 +43,13 @@ const getSchedulesByMonthYear = async (req, res) => {
 
             // Normalize dates
             startDate = startDate ? normalizeDate(startDate) : null;
-            endDate = endDate ? new Date(normalizeDate(endDate).setUTCHours(23, 59, 59, 999)) : null;
+            endDate = endDate
+                ? new Date(normalizeDate(endDate).setUTCHours(23, 59, 59, 999))
+                : null;
 
             query.date = {
                 ...(startDate && { $gte: startDate }),
-                ...(endDate && { $lte: endDate })
+                ...(endDate && { $lte: endDate }),
             };
         }
 
@@ -62,10 +64,16 @@ const getSchedulesByMonthYear = async (req, res) => {
             .populate('clientId')
             .populate({
                 path: 'subtasks',
+                match: { isActive: true }, // ✅ only active subtasks
                 populate: {
                     path: 'taskId',
                     model: 'tasks',
-                    select: 'name description status'
+                    select: 'name projectId', // include projectId
+                    populate: {
+                        path: 'projectId',
+                        model: 'project',
+                        select: 'name' // ✅ only project name
+                    }
                 }
             });
 
@@ -74,10 +82,11 @@ const getSchedulesByMonthYear = async (req, res) => {
         console.error('Error in getSchedules:', err);
         res.status(500).json({
             message: 'Server error',
-            error: err.message
+            error: err.message,
         });
     }
 };
+
 
 const createOrUpdateSubtaskSchedule = async (req, res) => {
     try {
