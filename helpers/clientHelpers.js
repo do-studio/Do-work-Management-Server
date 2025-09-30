@@ -30,6 +30,15 @@ const clientHelpers = {
     );
     return updatedClient;
   },
+  removeCalendarClient: async (id) => {
+    // Instead of deleting, mark as inactive
+    const updatedClient = await ClientModel.findByIdAndUpdate(
+      id,
+      { isActive: false },
+      { new: true }
+    );
+    return updatedClient;
+  },
 };
 
 export default clientHelpers;

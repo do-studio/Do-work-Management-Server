@@ -10,6 +10,8 @@ const clientRoutes = () => {
   // Normal client routes
   router.post('/addClient', controllers.addClient);
   router.get('/getAllClients', controllers.getClients);
+  router.get('/get-calendar-clients', controllers.getCalendarClients);
+  router.put('/calendar-client/:id', controllers.toggleCalendarClient);
   router.delete('/removeClient/:id', controllers.deleteClient);
 
   return router;
