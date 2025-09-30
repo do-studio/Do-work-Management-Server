@@ -22,18 +22,16 @@ const validateDateInput = (date) => {
     return !isNaN(d.getTime());
 };
 
+
 const getSchedulesByMonthYear = async (req, res) => {
     try {
         let { startDate, endDate, clientId } = req.query;
-
-        console.log("Starting Date", startDate);
-        console.log("Ending Date", endDate);
 
         // Build the base query
         const query = {};
 
         if (startDate || endDate) {
-            // Validate dates first
+            // Validate dates
             if (startDate && !validateDateInput(startDate)) {
                 return res.status(400).json({ message: 'Invalid startDate format' });
             }
@@ -61,23 +59,30 @@ const getSchedulesByMonthYear = async (req, res) => {
         }
 
         const schedules = await SubtaskSchedule.find(query)
-            .populate('clientId')
+            .populate({
+                path: 'clientId',
+                match: { showCalendar: true }, // ✅ only include clients with showCalendar true
+                select: 'client color showCalendar', // ✅ select only needed fields
+            })
             .populate({
                 path: 'subtasks',
-                match: { isActive: true }, // ✅ only active subtasks
+                match: { isActive: true },
                 populate: {
                     path: 'taskId',
                     model: 'tasks',
-                    select: 'name projectId', // include projectId
+                    select: 'name projectId',
                     populate: {
                         path: 'projectId',
                         model: 'project',
-                        select: 'name' // ✅ only project name
+                        select: 'name'
                     }
                 }
             });
 
-        res.json(schedules);
+        // Filter out schedules where clientId is null (because of match)
+        const filteredSchedules = schedules.filter(s => s.clientId);
+
+        res.json(filteredSchedules);
     } catch (err) {
         console.error('Error in getSchedules:', err);
         res.status(500).json({
@@ -86,6 +91,8 @@ const getSchedulesByMonthYear = async (req, res) => {
         });
     }
 };
+
+
 
 
 const createOrUpdateSubtaskSchedule = async (req, res) => {

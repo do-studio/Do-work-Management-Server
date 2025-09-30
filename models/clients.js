@@ -13,7 +13,11 @@ const ClientSchema = new Schema(
             default: "#05438a",
             required: true,
         },
-        isActive:{
+        showCalendar: {
+            type: Boolean,
+            default: false
+        },
+        isActive: {
             type: Boolean,
             default: true
         }

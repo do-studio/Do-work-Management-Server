@@ -2,6 +2,7 @@ import Joi from "joi"
 import notificationHelpers from "../helpers/notificationHelpers.js"
 import userHelpers from "../helpers/userHelpers.js"
 import clientHelpers from "../helpers/clientHelpers.js"
+import ClientModel from "../models/clients.js"
 
 
 const clientControllers = () => {
@@ -55,6 +56,17 @@ const clientControllers = () => {
         }
     }
 
+    const getCalendarClients = async (req, res) => {
+        try {
+            const getResponse = await ClientModel.find({ isActive: true, showCalendar: true }, { __v: 0 }).sort({
+                client: 1,
+            });
+            return res.status(200).json({ status: true, data: getResponse })
+        } catch (error) {
+            return res.status(500).json({ status: false, message: "Internal error" })
+        }
+    }
+
     const deleteClient = async (req, res) => {
 
         const { id } = req.params; // Get the client ID from the URL parameter
@@ -72,11 +84,39 @@ const clientControllers = () => {
         }
     };
 
+    const toggleCalendarClient = async (req, res) => {
+        const { id } = req.params; // client id from URL
+        const { showCalendar } = req.body; // true/false flag
+
+        try {
+            const updatedClient = await ClientModel.findByIdAndUpdate(
+                id,
+                { showCalendar }, // set to passed value
+                { new: true }
+            );
+
+            if (!updatedClient) {
+                return res.status(404).json({ status: false, message: "Client not found" });
+            }
+
+            return res.status(200).json({
+                status: true,
+                message: `Client ${showCalendar ? "added to" : "removed from"} calendar`,
+                data: updatedClient,
+            });
+        } catch (error) {
+            console.error("Error updating client showCalendar:", error);
+            return res.status(500).json({ status: false, message: "Internal server error" });
+        }
+    };
+
 
     return {
         addClient,
         getClients,
-        deleteClient
+        deleteClient,
+        getCalendarClients,
+        toggleCalendarClient
     }
 }
 
