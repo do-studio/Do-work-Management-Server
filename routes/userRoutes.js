@@ -1,6 +1,7 @@
 import express from 'express'
 import userControllers from '../controllers/userControllers.js';
 import { uploadProfilePic } from '../middlewares/cloudinaryConfig.js';
+import upload from '../middlewares/uploadToR2.js';
 
 const userRoutes = () => {
     const router = express.Router();
@@ -12,7 +13,7 @@ const userRoutes = () => {
     router.patch('/resetNotifications', controllers.resetNotifications)
     router.get('/getUsersAssign', controllers.getUsersAssign)
     router.get('/getPermissions', controllers.getPermissions)
-    router.post('/uploadProfilePic', uploadProfilePic, controllers.uploadProfilePic)
+    router.post('/uploadProfilePic', upload.single("profileImgURL"), controllers.uploadProfilePic)
 
     return router
 }
