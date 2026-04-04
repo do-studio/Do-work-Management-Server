@@ -30,6 +30,7 @@ const taskHelpers = {
         path: "taskId",        // populate Task
         select: "projectId"    // only bring projectId field
       })
+      .populate("people")
       .sort({ dueDate: 1 });
 
     const todayTasks = await SubTaskModel.find({
@@ -40,56 +41,21 @@ const taskHelpers = {
         path: "taskId",
         select: "projectId"
       })
+      .populate("people")
       .sort({ dueDate: 1 });;
 
-
-
-    // 🟢 Aggregation for today's tasks
-    // const todayTasks1 = await SubTaskModel.aggregate([
-    //   {
-    //     $match: {
-    //       dueDate: endOfDayUTC.toISOString(),
-    //       isActive: true
-    //     }
-    //   },
-    //   {
-    //     $lookup: {
-    //       from: 'chats',
-    //       localField: '_id',
-    //       foreignField: 'roomId',
-    //       as: 'chats'
-    //     }
-    //   },
-    //   {
-    //     $addFields: {
-    //       people: { $map: { input: "$people", as: "person", in: { $toObjectId: "$$person" } } }
-    //     }
-    //   },
-    //   {
-    //     $sort: { dueDate: 1 }
-    //   }
-    // ]);
-
-
-
-
-
-
-
-    // console.log("todayTasks1 chats", todayTasks1[0]);
-    // console.log("todayTasks", todayTasks);
-    // Query for documents where dueDate is between the start and end of the day
 
     const prevTasks = await SubTaskModel.find({
       dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
       // status: { $ne: "done" },
-      status: { $nin: ["done", "posted"] }, // Not equal to "done" and "posted"
+      status: { $nin: ["done", "posted", "approved by client"] }, // Not equal to "done" and "posted"
       isActive: true
     })
       .populate({
         path: "taskId",
         select: "projectId"
       })
+      .populate("people")
       .sort({ dueDate: 1 });;
 
     // return todayTasks1
@@ -98,8 +64,8 @@ const taskHelpers = {
 
 
 
-    const combinedTasks = [...todayTasks, ...prevTasks];
-
+    const combinedTasks = [...todayTasks, ...prevTasks, ...nextDayTasks];
+    console.log("combinedTasks length", combinedTasks.length);
     return { todayTasks, prevTasks, nextDayTasks }
   },
 

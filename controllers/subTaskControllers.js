@@ -93,7 +93,9 @@ const subTaskControllers = () => {
                 ]
             )
 
-            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId)
+                .populate("people", "userName profilePhotoURL")
+                .populate("taskId", "projectId");
 
             // Emit a socket event to update all connected clients
             req.app.get("socketio").emit("subtaskUpdated", {
@@ -214,7 +216,9 @@ const subTaskControllers = () => {
             });
 
 
-            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId)
+                .populate("people", "userName profilePhotoURL")
+                .populate("taskId", "projectId");
 
 
             // Emit a socket event to update all connected clients
@@ -280,7 +284,9 @@ const subTaskControllers = () => {
             ]);
 
 
-            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId)
+                .populate("people", "userName profilePhotoURL")
+                .populate("taskId", "projectId");
 
             // Emit a socket event to update all connected clients
             req.app.get("socketio").emit("subtaskUpdated", {
@@ -409,7 +415,9 @@ const subTaskControllers = () => {
             ]);
 
 
-            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId)
+                .populate("people", "userName profilePhotoURL")
+                .populate("taskId", "projectId");
 
             // Emit a socket event to update all connected clients
             req.app.get("socketio").emit("subtaskUpdated", {
@@ -482,7 +490,9 @@ const subTaskControllers = () => {
                 ]
             )
 
-            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId)
+                .populate("people", "userName profilePhotoURL")
+                .populate("taskId", "projectId");
 
             // Emit a socket event to update all connected clients
             req.app.get("socketio").emit("subtaskUpdated", {
@@ -555,7 +565,9 @@ const subTaskControllers = () => {
                 ]
             )
 
-            const subTaskNew = await SubTaskModel.findById(value.subTaskId);
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId)
+                .populate("people", "userName profilePhotoURL")
+                .populate("taskId", "projectId");
 
             // Emit a socket event to update all connected clients
             req.app.get("socketio").emit("subtaskUpdated", {

@@ -263,11 +263,21 @@ const taskControllers = () => {
             const result = [];
             const noUserTasks = [];
 
+
+            console.log(projectResponse[0].people)
+
+            // for (const personId of peopleIds) {
+            //     const filteredTasks = projectResponse.filter(item => item.people.includes(personId));
+            //     result.push({ personId, tasks: filteredTasks });
+            // }
+
             for (const personId of peopleIds) {
-                const filteredTasks = projectResponse.filter(item => item.people.includes(personId));
+                const filteredTasks = projectResponse.filter(item => {
+                    // Use .some() to check if any person in the populated array has a matching _id
+                    return item.people.some(person => person._id.toString() === personId.toString());
+                });
                 result.push({ personId, tasks: filteredTasks });
             }
-
 
             const filteredNoUserTasks = projectResponse.filter(item => item.people.length === 0)
 
