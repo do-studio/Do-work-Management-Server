@@ -470,7 +470,7 @@ const taskHelpers = {
                 // dueDate: endOfDayUTC.toISOString(),
                 dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
                 // status: { $ne: "done" },
-                status: { $nin: ["done", "posted", "approved by client"] },
+                status: { $nin: ["done", "posted", "approved by client","canceled"] },
               },
             },
             {
