@@ -48,7 +48,7 @@ const taskHelpers = {
     const prevTasks = await SubTaskModel.find({
       dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
       // status: { $ne: "done" },
-      status: { $nin: ["done", "posted", "approved by client", "waiting approval"] }, // Not equal to "done" and "posted"
+      status: { $nin: ["done", "posted", "approved by client", "waiting approval", "canceled"] }, // Not equal to "done" and "posted"
       isActive: true
     })
       .populate({
