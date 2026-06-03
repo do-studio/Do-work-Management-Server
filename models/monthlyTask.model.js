@@ -3,9 +3,11 @@ import mongoose, { model, Schema } from "mongoose";
 const STATUS_OPTIONS = [
   'Not Started',
   'Strategy Done',
+  'Done',
   'Rework',
   'Working on it',
-  'Strategy Approved by Client'
+  'Strategy Approved by Client',
+  'Approved by Client'
 ];
 
 const assetSchema = new Schema({
