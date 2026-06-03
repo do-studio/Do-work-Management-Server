@@ -69,6 +69,9 @@ const socketConfig = (io) => {
     socket.on("attendance-updation", (data) => {
       socket.broadcast.emit("attendance-updated", data)
     })
+    socket.on("monthlyTask-updation", (data) => {
+      socket.broadcast.emit("monthlyTask-updated", data)
+    })
 
 
     socket.on('disconnect', () => {

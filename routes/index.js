@@ -16,6 +16,8 @@ import reminderRoutes from './reminderRoutes.js'; // Import reminder routes
 import billingRoutes from './billingRoutes.js';
 import scheduleRoutes from './scheduleRoutes.js';
 import adPerformanceRoutes from './adPerformanceRoute.js';
+import monthlyTaskRoutes from './monthlyTaskRoutes.js';
+import taskRoutesNew from './task.routes.js';
 
 
 
@@ -26,6 +28,7 @@ const routes = (app) => {
     app.use('/api/user', authMiddleware, userRoutes());
     app.use('/api/projects', authMiddleware, projectRoutes());
     app.use('/api/tasks', authMiddleware, taskRoutes());
+    app.use('/api/tasks', authMiddleware, taskRoutesNew());
     app.use('/api/subTasks', authMiddleware, subTaskRoutes());
     app.use('/api/chat', authMiddleware, chatRoutes());
     app.use('/api/notifications', authMiddleware, notificationRoutes());
@@ -38,6 +41,7 @@ const routes = (app) => {
     app.use('/api/billings', authMiddleware, billingRoutes()); // Use billing routes 
     app.use('/api/schedules', authMiddleware, scheduleRoutes());
     app.use('/api/ad-performance', authMiddleware, adPerformanceRoutes());
+    app.use('/api/monthly-tasks', authMiddleware, monthlyTaskRoutes());
 
 }
 
