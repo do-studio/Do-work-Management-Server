@@ -373,6 +373,21 @@ const taskHelpers = {
                     }
                   }
                 }
+              },
+              {
+                $lookup: {
+                  from: "subtaskschedules",
+                  localField: "_id",
+                  foreignField: "subtasks",
+                  as: "schedules"
+                }
+              },
+              {
+                $addFields: {
+                  scheduledDate: {
+                    $arrayElemAt: ["$schedules.date", 0]
+                  }
+                }
               }
             ],
             as: "subTasks"
@@ -559,6 +574,21 @@ const taskHelpers = {
                 },
               },
             },
+            {
+              $lookup: {
+                from: "subtaskschedules",
+                localField: "_id",
+                foreignField: "subtasks",
+                as: "schedules"
+              }
+            },
+            {
+              $addFields: {
+                scheduledDate: {
+                  $arrayElemAt: ["$schedules.date", 0]
+                }
+              }
+            }
           ],
           as: "subTasks",
         },

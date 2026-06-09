@@ -72,6 +72,7 @@ const headerControllers = () => {
     const getAllHeaders = async(req,res)=>{
         try {
             const headerResponse = await headerHelpers.getAllHeaders()
+            console.log("Headers from server",headerResponse)
             return res.status(200).json({status:true,data:headerResponse})
         } catch (error) {
             return res.status(500).json({ status: false, message: "Internal error" })

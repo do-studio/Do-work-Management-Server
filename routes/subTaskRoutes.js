@@ -17,6 +17,7 @@ const subTaskRoutes = () => {
 
     router.patch('/updatePriority/:projectId', controllers.updateSubTaskPriority)
     router.patch('/updateDueDate/:projectId', controllers.updateDueDate)
+    router.patch('/updateUrgent/:projectId', controllers.updateSubTaskUrgent)
     router.patch('/updateField/:projectId', permissionMiddleware("dynamic"), controllers.updateDynamicField)
     router.patch('/assignSubTask/:projectId', permissionMiddleware("people"), controllers.assignSubTask)
     router.patch('/removeSubTask/:projectId', permissionMiddleware("remove"), controllers.removeSubTsk)
