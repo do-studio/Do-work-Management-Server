@@ -511,6 +511,73 @@ const subTaskControllers = () => {
         }
     }
 
+    const updateSubTaskUrgent = async (req, res) => {
+        try {
+            const subTaskUrgentSchema = Joi.object({
+                subTaskId: Joi.string().required(),
+                isUrgent: Joi.boolean().required()
+            });
+
+            const { error, value } = subTaskUrgentSchema.validate(req.body);
+
+            if (error) {
+                return res.status(200).json({ status: false, message: error.details[0].message });
+            }
+
+            const assigner = req.payload.id;
+
+            const subTask = await SubTaskModel.findById(value.subTaskId);
+
+            if (!subTask) {
+                return res.status(200).json({ status: false, message: "Subtask not found" });
+            }
+
+            const subTaskName = subTask.task;
+            const previousUrgency = subTask.isUrgent ? "Urgent" : "Not Urgent";
+            const newUrgency = value.isUrgent ? "Urgent" : "Not Urgent";
+            const taskId = subTask.taskId;
+
+            const task = await TaskModel.findById(taskId);
+
+            if (!task) {
+                return res.status(200).json({ status: false, message: "Parent task not found" });
+            }
+
+            const [subTaskUrgentUpdateResponse, userNotificationResponse, notificationResponse] = await Promise.all([
+                subTaskHelpers.updateSubTaskUrgent(value),
+                userHelpers.addNotificationCount(assigner),
+                notificationHelpers.addNotification({
+                    assigner,
+                    notification: `The urgency of the task "${subTaskName}" has been updated from ${previousUrgency} to ${newUrgency}.`
+                }),
+            ]);
+
+            const subTaskNew = await SubTaskModel.findById(value.subTaskId)
+                .populate("people", "userName profilePhotoURL")
+                .populate("taskId", "projectId");
+
+            req.app.get("socketio").emit("subtaskUpdated", {
+                subtask: subTaskNew,
+                type: "isUrgent"
+            });
+            console.log('Emitting subTaskUrgentUpdated event:', subTaskNew);
+
+            if (subTaskUrgentUpdateResponse.modifiedCount && notificationResponse) {
+                return res.status(200).json({
+                    status: true,
+                    notification: notificationResponse,
+                    projectId: task.projectId
+                });
+            }
+
+            return res.status(200).json({ status: false, message: "Error updating urgency" });
+
+        } catch (error) {
+            console.error("Error updating subtask urgency:", error);
+            return res.status(500).json({ status: false, message: "Internal Server Error" });
+        }
+    }
+
     const updateDynamicField = async (req, res) => {
         try {
             const dynamicFieldSchema = Joi.object({
@@ -730,6 +797,7 @@ const subTaskControllers = () => {
         updateSubTaskClient,
         updateSubTaskPriority,
         updateDueDate,
+        updateSubTaskUrgent,
         updateDynamicField,
         assignSubTask,
         removeSubTsk,

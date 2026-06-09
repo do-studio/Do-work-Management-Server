@@ -63,6 +63,14 @@ const subTaskHelpers = {
             throw error;
         }
     },
+    updateSubTaskUrgent:async(value)=>{
+        try {
+            return await SubTaskModel.updateOne({_id:value.subTaskId},{$set:{isUrgent:value.isUrgent}});
+        } catch (error) {
+            console.error('Error updating urgency:', error);
+            throw error;
+        }
+    },
     updateDynamicField:async({subTaskId,field,value})=>{
         try {
             return await SubTaskModel.updateOne({_id:subTaskId},{$set:{[field]:value}});

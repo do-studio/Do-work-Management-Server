@@ -41,6 +41,10 @@ const SubTaskSchema = new Schema(
         },
         client: {
             type: String
+        },
+        isUrgent: {
+            type: Boolean,
+            default: false
         }
     },
     {
