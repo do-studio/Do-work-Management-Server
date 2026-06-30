@@ -16,9 +16,11 @@ const clientHelpers = {
   },
 
   getAllClients: async () => {
-    return await ClientModel.find({ isActive: true }, { __v: 0 }).sort({
-      client: 1,
-    });
+    return await ClientModel.find({ isActive: true }, { __v: 0 })
+      .populate("handledBy", "userName profilePhotoURL")
+      .sort({
+        client: 1,
+      });
   },
 
   deleteClientById: async (id) => {

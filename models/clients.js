@@ -20,7 +20,11 @@ const ClientSchema = new Schema(
         isActive: {
             type: Boolean,
             default: true
-        }
+        },
+        handledBy: [{
+            type: Schema.Types.ObjectId,
+            ref: 'users'
+        }]
     }, { timestamps: true }
 
 )

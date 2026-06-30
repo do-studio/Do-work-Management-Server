@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import SubtaskSchedule from '../models/subtaskSchedule.js';
+import configKeys from '../config/configKeys.js';
 
 // Utility function to handle dates consistently
 const normalizeDate = (dateString) => {
@@ -58,11 +59,16 @@ const getSchedulesByMonthYear = async (req, res) => {
             query.clientId = clientId;
         }
 
+        const matchCondition = { showCalendar: true };
+        if (req.payload && req.payload.role !== configKeys.JWT_ADMIN_ROLE) {
+            matchCondition.handledBy = req.payload.id;
+        }
+
         const schedules = await SubtaskSchedule.find(query)
             .populate({
                 path: 'clientId',
-                match: { showCalendar: true }, // ✅ only include clients with showCalendar true
-                select: 'client color showCalendar', // ✅ select only needed fields
+                match: matchCondition, // ✅ only include clients matching user if not admin
+                select: 'client color showCalendar handledBy', // ✅ select only needed fields
             })
             .populate({
                 path: 'subtasks',

@@ -3,6 +3,7 @@ import notificationHelpers from "../helpers/notificationHelpers.js"
 import userHelpers from "../helpers/userHelpers.js"
 import clientHelpers from "../helpers/clientHelpers.js"
 import ClientModel from "../models/clients.js"
+import configKeys from "../config/configKeys.js"
 
 
 const clientControllers = () => {
@@ -14,6 +15,10 @@ const clientControllers = () => {
                     .min(1)
                     .max(18)
                     .required(),
+                handledBy: Joi.array()
+                    .items(Joi.string().hex().length(24))
+                    .optional()
+                    .default([])
             })
             const { error, value } = clientSchema.validate(req.body)
 
@@ -58,9 +63,19 @@ const clientControllers = () => {
 
     const getCalendarClients = async (req, res) => {
         try {
-            const getResponse = await ClientModel.find({ isActive: true, showCalendar: true }, { __v: 0 }).sort({
-                client: 1,
-            });
+            const userId = req.payload.id;
+            const userRole = req.payload.role;
+
+            let query = { isActive: true, showCalendar: true };
+            if (userRole !== configKeys.JWT_ADMIN_ROLE) {
+                query.handledBy = userId;
+            }
+
+            const getResponse = await ClientModel.find(query, { __v: 0 })
+                .populate("handledBy", "userName profilePhotoURL")
+                .sort({
+                    client: 1,
+                });
             return res.status(200).json({ status: true, data: getResponse })
         } catch (error) {
             return res.status(500).json({ status: false, message: "Internal error" })
@@ -109,6 +124,31 @@ const clientControllers = () => {
             return res.status(500).json({ status: false, message: "Internal server error" });
         }
     };
+    const updateClientHandler = async (req, res) => {
+        const { id } = req.params;
+        const { handledBy } = req.body;
+
+        try {
+            const updatedClient = await ClientModel.findByIdAndUpdate(
+                id,
+                { handledBy: handledBy || [] },
+                { new: true }
+            ).populate("handledBy", "userName profilePhotoURL");
+
+            if (!updatedClient) {
+                return res.status(404).json({ status: false, message: "Client not found" });
+            }
+
+            return res.status(200).json({
+                status: true,
+                message: "Client handler updated successfully",
+                data: updatedClient,
+            });
+        } catch (error) {
+            console.error("Error updating client handler:", error);
+            return res.status(500).json({ status: false, message: "Internal server error" });
+        }
+    };
 
 
     return {
@@ -116,7 +156,8 @@ const clientControllers = () => {
         getClients,
         deleteClient,
         getCalendarClients,
-        toggleCalendarClient
+        toggleCalendarClient,
+        updateClientHandler
     }
 }
 
