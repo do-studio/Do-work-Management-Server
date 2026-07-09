@@ -3,7 +3,7 @@ import BillingModel from "../models/billing.js";
 
 const getBillings = async (req, res) => {
     try {
-        const { page = 1, limit = 10, type } = req.query;
+        const { page = 1, limit = 10, type, search } = req.query;
         const skip = (page - 1) * limit;
 
         const now = new Date();
@@ -12,6 +12,12 @@ const getBillings = async (req, res) => {
 
         const query = {};
         if (type) query.type = type;
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { link: { $regex: search, $options: 'i' } }
+            ];
+        }
 
         const query2 = {
             isActive: true,
