@@ -87,7 +87,10 @@ const taskControllers = () => {
             const { projectId } = req.params;
             const { id } = req.payload;
 
-            const projectResponse = await taskHelpers.getSingleProjectIndividual(projectId, id);
+            const user = await UserModel.findById(id, { userRole: 1 });
+            const userRole = user?.userRole || "Designer";
+
+            const projectResponse = await taskHelpers.getSingleProjectIndividual(projectId, id, userRole);
 
             if (projectResponse.length) {
                 return res.status(200).json({ status: true, data: projectResponse });

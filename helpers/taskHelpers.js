@@ -438,21 +438,32 @@ const taskHelpers = {
     )
   },
 
-  getSingleProjectIndividual: async (projectid, userid) => {
+  getSingleProjectIndividual: async (projectid, userid, userRole = "Designer") => {
     const userId = new mongoose.Types.ObjectId(userid);
 
     const today = new Date();  // Get today's date in local timezone
 
-
+    const isContentCreator = (userRole || "").toLowerCase() === "content creator";
+    const excludedStatuses = isContentCreator
+      ? [
+          "content approved",
+          "content done",
+          "done",
+          "posted",
+          "approved by client",
+          "canceled",
+          "rework",
+          "finalizing",
+          "waiting approval",
+          "shoot done",
+          "final content"
+        ]
+      : ["done", "posted", "approved by client", "canceled"];
 
     // Convert to UTC if you want to compare in UTC
     const startOfPreviousMonthUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth() - 1, 1, 0, 0, 0, 0)); // Start of previous month
     const endOfDayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 1, 18, 30, 0, 0));
     const oneDayBeforeUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() - 2, 18, 30, 0, 0));
-
-
-
-
 
     const projects1 = await TaskModel.aggregate([
       {
@@ -481,11 +492,8 @@ const taskHelpers = {
                     { $eq: ["$isActive", true] },
                   ],
                 },
-                // Filter by dueDate range
-                // dueDate: endOfDayUTC.toISOString(),
                 dueDate: { $gte: startOfPreviousMonthUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
-                // status: { $ne: "done" },
-                status: { $nin: ["done", "posted", "approved by client","canceled"] },
+                status: { $nin: excludedStatuses },
               },
             },
             {
@@ -661,8 +669,7 @@ const taskHelpers = {
                 },
                 // Filter by dueDate range
                 dueDate: endOfDayUTC.toISOString(),
-                // dueDate: { $gte: startOfDayUTC.toISOString(), $lte: oneDayBeforeUTC.toISOString() },
-                // status: { $ne: "done" },
+                status: { $nin: excludedStatuses },
               },
             },
             {

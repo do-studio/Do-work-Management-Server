@@ -13,7 +13,7 @@ const userHelpers = {
         return await UserModel.updateOne({_id},{$set:{notificationUnreadCount:0}})
     },
     getAllUsers:async()=>{
-        return await UserModel.find({role:configKeys.JWT_USER_ROLE},{__v:0,password:0,role:0}).sort({isActive:1})
+        return await UserModel.find({role:configKeys.JWT_USER_ROLE},{__v:0,password:0,role:0}).sort({isActive:-1})
     },
     getUsersForAssign:async()=>{
         return await UserModel.find({isActive:true},{userName:1,profilePhotoURL:1})
@@ -29,6 +29,9 @@ const userHelpers = {
     },
     uploadProfilePic:async(_id,profilePhotoURL)=>{
         return await UserModel.updateOne({_id},{$set:{profilePhotoURL}})
+    },
+    updateUserRole:async(_id,userRole)=>{
+        return await UserModel.updateOne({_id},{$set:{userRole}})
     }
 }
 

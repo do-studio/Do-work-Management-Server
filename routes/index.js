@@ -28,7 +28,7 @@ const routes = (app) => {
     app.use('/api/user', authMiddleware, userRoutes());
     app.use('/api/projects', authMiddleware, projectRoutes());
     app.use('/api/tasks', authMiddleware, taskRoutes());
-    app.use('/api/tasks', authMiddleware, taskRoutesNew());
+    // app.use('/api/tasks', authMiddleware, taskRoutesNew());
     app.use('/api/subTasks', authMiddleware, subTaskRoutes());
     app.use('/api/chat', authMiddleware, chatRoutes());
     app.use('/api/notifications', authMiddleware, notificationRoutes());

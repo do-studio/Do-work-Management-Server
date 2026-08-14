@@ -30,6 +30,10 @@ const UserSchema = new Schema (
             type: String,
             default: configKeys.JWT_USER_ROLE
         },
+        userRole:{
+            type: String,
+            default: "Designer"
+        },
         profilePhotoURL:{
             type: String
         },
