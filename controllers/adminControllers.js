@@ -281,6 +281,29 @@ const adminControllers = () => {
         }
     }
 
+    const updateUserRole = async (req, res) => {
+        try {
+            const roleSchema = Joi.object({
+                id: Joi.string().required(),
+                userRole: Joi.string().required()
+            })
+            const { error, value } = roleSchema.validate(req.body)
+
+            if (error) {
+                return res.status(200).json({ status: false, message: error.details[0].message })
+            }
+
+            const { id, userRole } = value
+            const response = await userHelpers.updateUserRole(id, userRole)
+            if (response.modifiedCount) {
+                return res.status(200).json({ status: true, message: "Role updated" })
+            }
+            return res.status(200).json({ status: false, message: "Role update failed" })
+        } catch (error) {
+            return res.status(500).json({ status: false, message: "Internal error" })
+        }
+    }
+
     return {
         getAllUsers,
         getHeaders,
@@ -288,6 +311,7 @@ const adminControllers = () => {
         addPermission,
         updateUserStatus,
         updatePermissions,
+        updateUserRole,
         updateProjectName,
         removeProject,
         cloneProject,
